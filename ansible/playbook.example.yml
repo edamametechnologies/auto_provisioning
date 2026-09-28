@@ -1,0 +1,15 @@
+---
+# Example: ansible-playbook -i inventory playbook.example.yml --ask-vault-pass
+# Put edamame_pin and edamame_llm_api_key in an Ansible Vault file
+# (group_vars/edamame_hosts/vault.yml), never in plain text.
+- name: Deploy EDAMAME Posture
+  hosts: edamame_hosts
+  become: true
+  vars:
+    edamame_user: ci-fleet
+    edamame_domain: example.com
+    edamame_llm_provider: portal
+    edamame_agentic_mode: analyze
+    edamame_version: latest
+  roles:
+    - edamame

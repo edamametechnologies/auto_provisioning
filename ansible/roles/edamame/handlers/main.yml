@@ -1,0 +1,7 @@
+---
+- name: Restart edamame_posture
+  ansible.builtin.systemd_service:
+    name: edamame_posture
+    state: restarted
+    enabled: true
+    daemon_reload: true

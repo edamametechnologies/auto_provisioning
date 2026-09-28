@@ -1,0 +1,23 @@
+Windows Registry Editor Version 5.00
+
+; PROPOSED -- NOT READ BY ANY RELEASED EDAMAME VERSION.
+; Requires EDAMAME >= 2.1 (proposed). Importing this file today has no effect.
+; Same keys as profiles/macos/PROPOSED-edamame-managed-settings.mobileconfig.
+; Secrets (Hub PIN, LLM API key) are NOT policy values: HKLM\SOFTWARE\Policies
+; is readable by every local user. The proposal delivers them in
+; %ProgramData%\EDAMAME\Managed\secrets.json (SYSTEM and Administrators only),
+; read by the EDAMAME Helper service.
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\EDAMAME\EDAMAME Security]
+"OrganizationName"="Example Corp"
+; Per-device account: set HubEmail, or HubEmailSource="upn" to use the signed-in user's UPN.
+"HubEmailSource"="upn"
+"LockHubEnrollment"=dword:00000001
+"LLMProvider"="portal"
+"LLMModel"=""
+"LLMBaseURL"=""
+"LockLLM"=dword:00000001
+"ProtectionEnabled"=dword:00000001
+"AssistantLevel"="review"
+"LockProtection"=dword:00000001
+"NetworkMonitoringConsent"=dword:00000001

@@ -1,0 +1,9 @@
+# Private copies of scripts with embedded settings, and secret files.
+*.private.*
+*.local.*
+pin.txt
+llm_key.txt
+*.env
+ansible/group_vars/*/vault.yml
+ansible/group_vars/edamame_hosts/
+.DS_Store

@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  PROPOSED -- NOT READ BY ANY RELEASED EDAMAME VERSION.
+  Requires EDAMAME >= 2.1 (proposed). Installing this profile today has no
+  effect. It documents the managed keys proposed for the EDAMAME Security app
+  (preference domain = the app's bundle identifier,
+  com.edamametechnologies.edamame).
+
+  Secrets (Hub PIN, LLM API key) are deliberately NOT keys of this profile:
+  managed preferences are readable by local users. The proposal delivers them
+  in a root-only file read by the EDAMAME Helper (see docs/app-configuration.md).
+
+  HubEmail accepts MDM variables, e.g. Jamf $EMAIL or Intune {{mail}}.
+-->
+<plist version="1.0">
+<dict>
+    <key>PayloadDisplayName</key>
+    <string>EDAMAME Security - Managed Settings (PROPOSED)</string>
+    <key>PayloadIdentifier</key>
+    <string>com.edamametechnologies.mdm.managed-settings</string>
+    <key>PayloadOrganization</key>
+    <string>Example Corp</string>
+    <key>PayloadScope</key>
+    <string>System</string>
+    <key>PayloadType</key>
+    <string>Configuration</string>
+    <key>PayloadUUID</key>
+    <string>A5008E01-95BA-4870-BB78-E1C099A9162A</string>
+    <key>PayloadVersion</key>
+    <integer>1</integer>
+    <key>PayloadContent</key>
+    <array>
+        <dict>
+            <key>PayloadDisplayName</key>
+            <string>EDAMAME Security</string>
+            <key>PayloadIdentifier</key>
+            <string>com.edamametechnologies.mdm.managed-settings.app</string>
+            <key>PayloadType</key>
+            <string>com.edamametechnologies.edamame</string>
+            <key>PayloadUUID</key>
+            <string>120AEF56-7135-4BCC-823F-671D91317BB3</string>
+            <key>PayloadVersion</key>
+            <integer>1</integer>
+
+            <key>OrganizationName</key>
+            <string>Example Corp</string>
+
+            <key>HubEmail</key>
+            <string>$EMAIL</string>
+            <key>LockHubEnrollment</key>
+            <true/>
+
+            <key>LLMProvider</key>
+            <string>portal</string>
+            <key>LLMModel</key>
+            <string></string>
+            <key>LLMBaseURL</key>
+            <string></string>
+            <key>LockLLM</key>
+            <true/>
+
+            <key>ProtectionEnabled</key>
+            <true/>
+            <key>AssistantLevel</key>
+            <string>review</string>
+            <key>LockProtection</key>
+            <true/>
+
+            <key>NetworkMonitoringConsent</key>
+            <true/>
+        </dict>
+    </array>
+</dict>
+</plist>

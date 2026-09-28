@@ -1,0 +1,119 @@
+---
+- name: Validate parameters
+  ansible.builtin.assert:
+    that:
+      - ansible_facts['os_family'] == 'Debian'
+      - (edamame_llm_provider | lower) in ['portal', 'edamame', 'claude', 'openai', 'ollama', 'none']
+      - edamame_agentic_mode in ['analyze', 'auto', 'disabled']
+      - edamame_agentic_mode == 'disabled' or (edamame_llm_provider | lower) != 'none'
+      - (edamame_llm_provider | lower) not in ['portal', 'edamame', 'claude', 'openai'] or edamame_llm_api_key | length > 0
+      - (edamame_llm_provider | lower) != 'ollama' or edamame_llm_base_url | length > 0
+      - (edamame_user + edamame_domain + (edamame_pin | string)) | length == 0 or
+        (edamame_user | length > 0 and edamame_domain | length > 0 and (edamame_pin | string) is match('^[0-9]+$'))
+      - "'@' not in edamame_user"
+      - not edamame_install_app or ansible_facts['architecture'] == 'x86_64'
+    quiet: true
+  no_log: true
+
+- name: Install repository prerequisites
+  ansible.builtin.apt:
+    name: [ca-certificates, gnupg]
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Download the repository signing key
+  ansible.builtin.get_url:
+    url: "{{ edamame_repo_base }}/public.key"
+    dest: /tmp/edamame-public.key
+    mode: "0644"
+  changed_when: false
+
+- name: Read the key fingerprint
+  ansible.builtin.command: gpg --batch --with-colons --show-keys /tmp/edamame-public.key
+  register: edamame_key_info
+  changed_when: false
+
+- name: Check the key fingerprint
+  ansible.builtin.assert:
+    that: edamame_repo_key_fingerprint in edamame_key_info.stdout_lines | select('match', '^fpr:') | map('split', ':') | map(attribute=9) | list
+    fail_msg: EDAMAME repository key fingerprint mismatch
+    quiet: true
+
+- name: Install the repository keyring
+  ansible.builtin.command: gpg --batch --yes --dearmor -o {{ edamame_repo_keyring }} /tmp/edamame-public.key
+  args:
+    creates: "{{ edamame_repo_keyring }}"
+
+- name: Add the EDAMAME APT repository
+  ansible.builtin.copy:
+    dest: /etc/apt/sources.list.d/edamame.list
+    content: "deb [signed-by={{ edamame_repo_keyring }}] {{ edamame_repo_base }} stable main\n"
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Refresh the package lists
+  ansible.builtin.apt:
+    update_cache: true
+  changed_when: false
+
+- name: Resolve the package version
+  ansible.builtin.shell: >-
+    set -o pipefail;
+    apt-cache madison edamame-posture | awk -F'|' '{gsub(/ /,"",$2); print $2}'
+    | grep -E '^{{ edamame_version | regex_escape }}(-|$)' | head -n 1
+  args:
+    executable: /bin/bash
+  register: edamame_resolved
+  changed_when: false
+  failed_when: edamame_resolved.stdout | length == 0
+  when: edamame_version != 'latest'
+
+- name: Install edamame-posture
+  ansible.builtin.apt:
+    name: "{{ 'edamame-posture' if edamame_version == 'latest' else 'edamame-posture=' + edamame_resolved.stdout }}"
+    state: "{{ 'latest' if edamame_version == 'latest' else 'present' }}"
+    allow_downgrade: true
+    dpkg_options: force-confdef,force-confold
+  notify: Restart edamame_posture
+
+- name: Install the EDAMAME Security GUI
+  ansible.builtin.apt:
+    name: edamame-security
+    state: "{{ 'latest' if edamame_version == 'latest' else 'present' }}"
+  when: edamame_install_app | bool
+
+- name: Write /etc/edamame_posture.conf
+  ansible.builtin.template:
+    src: edamame_posture.conf.j2
+    dest: /etc/edamame_posture.conf
+    owner: root
+    group: root
+    mode: "0600"
+  no_log: true
+  notify: Restart edamame_posture
+
+- name: Create the service drop-in directory
+  ansible.builtin.file:
+    path: /etc/systemd/system/edamame_posture.service.d
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Write the service drop-in (model / base URL)
+  ansible.builtin.template:
+    src: override.conf.j2
+    dest: /etc/systemd/system/edamame_posture.service.d/50-edamame-provisioning.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart edamame_posture
+
+- name: Enable and start edamame_posture
+  ansible.builtin.systemd_service:
+    name: edamame_posture
+    enabled: true
+    state: started
+    daemon_reload: true

@@ -1,0 +1,37 @@
+---
+# EDAMAME Hub enrollment. Keep edamame_pin in Ansible Vault.
+edamame_user: ""
+edamame_domain: ""
+edamame_pin: ""
+edamame_device_id: ""
+
+# LLM: portal | claude | openai | ollama | none
+edamame_llm_provider: none
+# Portal API key or provider key. Keep it in Ansible Vault.
+edamame_llm_api_key: ""
+edamame_llm_model: ""
+# Ollama URL (provider ollama) or API base URL (claude / openai).
+edamame_llm_base_url: ""
+# analyze | auto | disabled. Anything but "disabled" requires a provider.
+edamame_agentic_mode: "{{ 'disabled' if edamame_llm_provider == 'none' else 'analyze' }}"
+edamame_agentic_interval: 3600
+
+# latest, or an exact upstream version such as 2.0.1
+edamame_version: latest
+# Also install the EDAMAME Security GUI (amd64 only); it uses this same service.
+edamame_install_app: false
+
+# Network monitoring keys of /etc/edamame_posture.conf
+edamame_start_lanscan: false
+edamame_start_capture: false
+edamame_whitelist_name: ""
+edamame_fail_on_whitelist: false
+edamame_fail_on_blacklist: false
+edamame_fail_on_findings: false
+edamame_cancel_on_violation: false
+edamame_include_local_traffic: false
+
+# Repository (signed); the key fingerprint is checked before it is trusted.
+edamame_repo_base: https://edamame.s3.eu-west-1.amazonaws.com/repo
+edamame_repo_key_fingerprint: D1C58B47675E486792DAFBAE42A2002B57F1A203
+edamame_repo_keyring: /usr/share/keyrings/edamame.gpg

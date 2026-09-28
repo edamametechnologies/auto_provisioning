@@ -1,0 +1,5 @@
+---
+# Copy to group_vars/edamame_hosts/vault.yml and encrypt:
+#   ansible-vault encrypt group_vars/edamame_hosts/vault.yml
+edamame_pin: "000000"
+edamame_llm_api_key: "edm_live_REPLACE_ME"

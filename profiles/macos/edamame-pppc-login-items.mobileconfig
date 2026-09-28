@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  EDAMAME -- Privacy Preferences Policy Control (PPPC) + Managed Login Items.
+  Works with current EDAMAME releases. Must be delivered by an MDM (PPPC
+  payloads are ignored when a profile is installed by hand).
+
+  1. Full Disk Access (SystemPolicyAllFiles) for the two Endpoint Security
+     clients: the EDAMAME Helper (installed by the EDAMAME Security PKG) and
+     EDAMAME Posture (installed by the edamame-posture PKG). Deploy only the
+     entries for what you install. Code requirements were read from the
+     2.0.1 release bundles with `codesign -d -r-`.
+  2. Managed Login Items: marks the EDAMAME launch daemons (Team ID
+     WSL782B48J, and the auto_provisioning daemon label) as managed, so users
+     cannot turn them off in System Settings > General > Login Items
+     (macOS 13+).
+-->
+<plist version="1.0">
+<dict>
+    <key>PayloadDisplayName</key>
+    <string>EDAMAME - Privacy and Login Items</string>
+    <key>PayloadDescription</key>
+    <string>Full Disk Access for the EDAMAME Helper and EDAMAME Posture; managed EDAMAME background items.</string>
+    <key>PayloadIdentifier</key>
+    <string>com.edamametechnologies.mdm.pppc-login-items</string>
+    <key>PayloadOrganization</key>
+    <string>EDAMAME Technologies</string>
+    <key>PayloadScope</key>
+    <string>System</string>
+    <key>PayloadType</key>
+    <string>Configuration</string>
+    <key>PayloadUUID</key>
+    <string>3E9B9A75-C92C-4A88-BE27-D3027FDCA110</string>
+    <key>PayloadVersion</key>
+    <integer>1</integer>
+    <key>PayloadRemovalDisallowed</key>
+    <true/>
+    <key>PayloadContent</key>
+    <array>
+        <dict>
+            <key>PayloadDisplayName</key>
+            <string>EDAMAME Full Disk Access</string>
+            <key>PayloadIdentifier</key>
+            <string>com.edamametechnologies.mdm.pppc-login-items.tcc</string>
+            <key>PayloadType</key>
+            <string>com.apple.TCC.configuration-profile-policy</string>
+            <key>PayloadUUID</key>
+            <string>F96BA16D-8EDF-437B-B8CE-95F290593488</string>
+            <key>PayloadVersion</key>
+            <integer>1</integer>
+            <key>Services</key>
+            <dict>
+                <key>SystemPolicyAllFiles</key>
+                <array>
+                    <dict>
+                        <key>Identifier</key>
+                        <string>com.edamametechnologies.edamame-helper</string>
+                        <key>IdentifierType</key>
+                        <string>bundleID</string>
+                        <key>CodeRequirement</key>
+                        <string>identifier "com.edamametechnologies.edamame-helper" and anchor apple generic and certificate 1[field.1.2.840.113635.100.6.2.6] /* exists */ and certificate leaf[field.1.2.840.113635.100.6.1.13] /* exists */ and certificate leaf[subject.OU] = WSL782B48J</string>
+                        <key>Authorization</key>
+                        <string>Allow</string>
+                        <key>Comment</key>
+                        <string>EDAMAME Helper (Endpoint Security client)</string>
+                    </dict>
+                    <dict>
+                        <key>Identifier</key>
+                        <string>com.edamametechnologies.edamame-posture</string>
+                        <key>IdentifierType</key>
+                        <string>bundleID</string>
+                        <key>CodeRequirement</key>
+                        <string>identifier "com.edamametechnologies.edamame-posture" and anchor apple generic and certificate 1[field.1.2.840.113635.100.6.2.6] /* exists */ and certificate leaf[field.1.2.840.113635.100.6.1.13] /* exists */ and certificate leaf[subject.OU] = WSL782B48J</string>
+                        <key>Authorization</key>
+                        <string>Allow</string>
+                        <key>Comment</key>
+                        <string>EDAMAME Posture (Endpoint Security client)</string>
+                    </dict>
+                </array>
+            </dict>
+        </dict>
+        <dict>
+            <key>PayloadDisplayName</key>
+            <string>EDAMAME Managed Login Items</string>
+            <key>PayloadIdentifier</key>
+            <string>com.edamametechnologies.mdm.pppc-login-items.servicemanagement</string>
+            <key>PayloadType</key>
+            <string>com.apple.servicemanagement</string>
+            <key>PayloadUUID</key>
+            <string>88EA4119-454B-4705-A6ED-9EA839E08D7E</string>
+            <key>PayloadVersion</key>
+            <integer>1</integer>
+            <key>Rules</key>
+            <array>
+                <dict>
+                    <key>RuleType</key>
+                    <string>TeamIdentifier</string>
+                    <key>RuleValue</key>
+                    <string>WSL782B48J</string>
+                    <key>Comment</key>
+                    <string>EDAMAME Technologies</string>
+                </dict>
+                <dict>
+                    <key>RuleType</key>
+                    <string>Label</string>
+                    <key>RuleValue</key>
+                    <string>com.edamametechnologies.edamame-helper</string>
+                    <key>Comment</key>
+                    <string>EDAMAME Helper launch daemon</string>
+                </dict>
+                <dict>
+                    <key>RuleType</key>
+                    <string>Label</string>
+                    <key>RuleValue</key>
+                    <string>com.edamametechnologies.auto-provisioning.posture</string>
+                    <key>Comment</key>
+                    <string>EDAMAME Posture daemon installed by auto_provisioning (runs /bin/sh, so the Team ID rule does not cover it)</string>
+                </dict>
+            </array>
+        </dict>
+    </array>
+</dict>
+</plist>

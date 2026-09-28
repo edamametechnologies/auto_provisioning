@@ -1,0 +1,9 @@
+# Managed by Ansible ({{ role_name }}). Values edamame_posture reads from the
+# environment that /etc/edamame_posture.conf has no key for. Not secrets.
+[Service]
+{% if edamame_llm_model and (edamame_llm_provider | lower) in ['claude', 'openai', 'ollama'] %}
+Environment="EDAMAME_LLM_MODEL={{ edamame_llm_model }}"
+{% endif %}
+{% if edamame_llm_base_url and (edamame_llm_provider | lower) in ['claude', 'openai'] %}
+Environment="EDAMAME_LLM_BASE_URL={{ edamame_llm_base_url }}"
+{% endif %}

@@ -1,0 +1,30 @@
+{#- Values are double-quoted; backslash and double quote are escaped the way
+    edamame_posture_daemon.sh unescapes them. -#}
+{%- macro q(v) -%}"{{ (v | string) | replace('\\', '\\\\') | replace('"', '\\"') }}"{%- endmacro -%}
+{%- set p = edamame_llm_provider | lower -%}
+{%- set p = 'edamame' if p in ['portal', 'edamame'] else p -%}
+# EDAMAME Posture service configuration -- managed by Ansible ({{ role_name }}).
+# Holds the Hub PIN and the LLM credential: root-owned, mode 0600.
+edamame_user: {{ q(edamame_user) }}
+edamame_domain: {{ q(edamame_domain) }}
+edamame_pin: {{ q(edamame_pin) }}
+edamame_device_id: {{ q(edamame_device_id) }}
+
+start_lanscan: {{ q(edamame_start_lanscan | bool | lower) }}
+start_capture: {{ q(edamame_start_capture | bool | lower) }}
+whitelist_name: {{ q(edamame_whitelist_name) }}
+fail_on_whitelist: {{ q(edamame_fail_on_whitelist | bool | lower) }}
+fail_on_blacklist: {{ q(edamame_fail_on_blacklist | bool | lower) }}
+fail_on_findings: {{ q(edamame_fail_on_findings | bool | lower) }}
+cancel_on_violation: {{ q(edamame_cancel_on_violation | bool | lower) }}
+include_local_traffic: {{ q(edamame_include_local_traffic | bool | lower) }}
+
+agentic_mode: {{ q(edamame_agentic_mode) }}
+agentic_provider: {{ q('' if p == 'none' else p) }}
+agentic_interval: {{ q(edamame_agentic_interval) }}
+llm_api_key: {{ q(edamame_llm_api_key if p == 'edamame' else '') }}
+claude_api_key: {{ q(edamame_llm_api_key if p == 'claude' else '') }}
+openai_api_key: {{ q(edamame_llm_api_key if p == 'openai' else '') }}
+ollama_base_url: {{ q(edamame_llm_base_url if p == 'ollama' else '') }}
+
+notification_provider: "auto"
