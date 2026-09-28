@@ -34,5 +34,8 @@ enforce** with an audit script checking
 Or use a Custom Script with `scripts/macos/install-edamame-app.sh`
 (`export EDAMAME_VERSION=2.0.1` in the first lines of a copy).
 
-Users then enroll in the app (managed settings: requires EDAMAME >= 2.1,
-proposed; Kandji's profile variables such as `$EMAIL` would fill `HubEmail`).
+With EDAMAME >= 2.0.2, a Custom Profile built from
+[edamame-managed-settings.mobileconfig](../../profiles/macos/edamame-managed-settings.mobileconfig)
+enrolls the app (Kandji's profile variables such as `$EMAIL` fill
+`HubEmail`); see [app-configuration.md](../app-configuration.md) for the
+secrets file. Earlier versions: users enroll in the app.

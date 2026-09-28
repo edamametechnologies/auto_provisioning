@@ -17,7 +17,7 @@ It covers two products:
 | | Scenario | Zero-touch today? |
 |---|---|---|
 | A | **Posture only**: servers, CI runners, Linux fleets, kiosks, any headless host | **Yes** on Linux, macOS and Windows |
-| B | **EDAMAME Security app + helper** on managed desktops | **Linux: yes** (the Linux app is a GUI for the posture service, so scenario A's configuration applies). **macOS / Windows: install only**; Hub enrollment and LLM setup are done by the user in the app until managed configuration ships (requires EDAMAME >= 2.1, proposed) |
+| B | **EDAMAME Security app + helper** on managed desktops | **Linux: yes** (the Linux app is a GUI for the posture service, so scenario A's configuration applies). **macOS / Windows: yes with EDAMAME >= 2.0.2**: a configuration profile / Group Policy sets Hub enrollment, the LLM, protection and locks, and a root-only secrets file delivers the PIN and key ([docs/app-configuration.md](docs/app-configuration.md)); earlier versions: install only |
 | C | **Mixed fleet**: A on servers, B on desktops, one Hub domain | As A and B. Do not install Posture and the app on the same macOS or Windows host (see [docs/configuration-reference.md](docs/configuration-reference.md#one-edamame-core-per-host)) |
 
 ## Contents
@@ -31,9 +31,9 @@ scripts/
   windows/Install-EdamameApp.ps1      All-in-one bundle install + verification (B)
 profiles/
   macos/edamame-pppc-login-items.mobileconfig          Full Disk Access + managed login items (works today)
-  macos/PROPOSED-edamame-managed-settings.mobileconfig app managed settings (not read by any release yet)
-  windows/PROPOSED-edamame-managed-settings.reg        same, registry form (not read by any release yet)
-  windows/admx/                                        same, ADMX/ADML (not read by any release yet)
+  macos/edamame-managed-settings.mobileconfig         app managed settings (EDAMAME >= 2.0.2)
+  windows/edamame-managed-settings.reg                same, registry form (EDAMAME >= 2.0.2)
+  windows/admx/                                       same, ADMX/ADML (EDAMAME >= 2.0.2)
 ansible/                              Ansible role `edamame` + example playbook (Linux fleets)
 docs/                                 distribution, configuration reference, app status, security, per-MDM guides
 tests/, tools/lint.sh                 unit tests for the configuration logic, static checks
@@ -136,7 +136,7 @@ Downloads are checked against the release's signed `SHA256SUMS`; see
 
 - [docs/distribution.md](docs/distribution.md): every channel, artifact name and URL
 - [docs/configuration-reference.md](docs/configuration-reference.md): posture flags, configuration keys, environment variables, where each script writes what
-- [docs/app-configuration.md](docs/app-configuration.md): what can and cannot be preconfigured in the desktop app today, and the proposed managed settings
+- [docs/app-configuration.md](docs/app-configuration.md): the desktop app's managed settings (EDAMAME >= 2.0.2): keys, secrets file, precedence and locks
 - [docs/security.md](docs/security.md): secret handling per MDM, file permissions, verification
 - MDM guides: [generic](docs/mdm/generic.md), [Microsoft Intune](docs/mdm/intune.md), [Jamf Pro](docs/mdm/jamf.md), [Kandji](docs/mdm/kandji.md), [Mosyle](docs/mdm/mosyle.md), [Workspace ONE](docs/mdm/workspace-one.md), [ConfigMgr (SCCM)](docs/mdm/configmgr.md), [Linux fleets: Ansible, Puppet, Chef, Salt](docs/linux-fleet.md)
 

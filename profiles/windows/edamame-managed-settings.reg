@@ -1,12 +1,12 @@
 Windows Registry Editor Version 5.00
 
-; PROPOSED -- NOT READ BY ANY RELEASED EDAMAME VERSION.
-; Requires EDAMAME >= 2.1 (proposed). Importing this file today has no effect.
-; Same keys as profiles/macos/PROPOSED-edamame-managed-settings.mobileconfig.
+; Managed settings for the EDAMAME Security app. Requires EDAMAME >= 2.0.2.
+; Same keys as profiles/macos/edamame-managed-settings.mobileconfig (ADMX in admx/).
 ; Secrets (Hub PIN, LLM API key) are NOT policy values: HKLM\SOFTWARE\Policies
-; is readable by every local user. The proposal delivers them in
+; is readable by every local user. Deploy them in
 ; %ProgramData%\EDAMAME\Managed\secrets.json (SYSTEM and Administrators only),
 ; read by the EDAMAME Helper service.
+; Remove the values you do not want to manage: an absent value is left to the user.
 
 [HKEY_LOCAL_MACHINE\SOFTWARE\Policies\EDAMAME\EDAMAME Security]
 "OrganizationName"="Example Corp"
@@ -21,3 +21,8 @@ Windows Registry Editor Version 5.00
 "AssistantLevel"="review"
 "LockProtection"=dword:00000001
 "NetworkMonitoringConsent"=dword:00000001
+"ShareAIFailureDetails"=dword:00000001
+"CaptureEnabled"=dword:00000001
+"FileMonitorEnabled"=dword:00000001
+"LockMonitoring"=dword:00000000
+"HideAISettings"=dword:00000000

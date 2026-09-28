@@ -1,88 +1,132 @@
-# EDAMAME Security app: what can be preconfigured
+# EDAMAME Security app: managed configuration
 
-## Today (2.0.x)
+Requires **EDAMAME >= 2.0.2** on macOS and Windows. On Linux the app is a GUI
+for the posture service: configure `/etc/edamame_posture.conf` instead
+([linux-fleet.md](linux-fleet.md)). iOS and Android are not covered yet.
 
-| Setting | Linux | macOS / Windows |
+| Setting | Linux | macOS / Windows (>= 2.0.2) |
 |---|---|---|
 | Silent install | yes (APT) | yes (`installer -pkg`, bundle `/quiet`) |
 | Helper Full Disk Access (macOS) | n/a | yes, PPPC profile ([profiles/macos](../profiles/macos/edamame-pppc-login-items.mobileconfig)) |
-| Hub user / domain / PIN | yes: `/etc/edamame_posture.conf` (the Linux app uses the posture service) | **no** |
-| EDAMAME Portal key / BYO LLM | yes: same file | **no** |
-| Protection on (Assistant + detectors) | yes: `agentic_mode` in the same file | **no** |
-| Network monitoring consent | n/a (service configuration) | **no** |
-| Lock settings against user changes | root-only file | **no** |
+| Hub user / domain / PIN | `/etc/edamame_posture.conf` | policy + secrets file |
+| EDAMAME Portal key / own LLM | same file | policy + secrets file |
+| Protection on (Assistant + detectors) | `agentic_mode` | policy |
+| Network monitoring consent | n/a (service configuration) | policy |
+| Lock settings against user changes | root-only file | policy `Lock*` keys |
 
-On macOS and Windows the app reads no managed configuration. What was
-checked in the source:
+## Where the app reads it
 
-- The app's only startup switches are compile-time `--dart-define` values
-  (`EDAMAME_CORE_TARGET`, `EDAMAME_DEMO_MODE`, certificates); nothing is read
-  from the environment, the registry or managed preferences at run time.
-- The core persists its state per user: `UserDefaults` of
-  `com.edamametechnologies.edamame` on macOS, `%APPDATA%\com.edamametech\EDAMAME Security\`
-  on Windows. Hub credentials are the `connection_status` entry; the LLM
-  configuration is the `agentic` entry. Pre-seeding these is not supported
-  (format is internal, and the MSIX / sandbox containers redirect paths).
+| OS | Non-secret keys | Secrets (Hub PIN, LLM / Portal key) |
+|---|---|---|
+| macOS | Configuration profile, preference domain `com.edamametechnologies.edamame` (the app's bundle identifier), device or user scope. Only profile-delivered (forced) values count | `/Library/Application Support/EDAMAME/Managed/secrets.json`, owner `root`, mode `0600` (refused otherwise), read by the EDAMAME Helper |
+| Windows | `HKLM\SOFTWARE\Policies\EDAMAME\EDAMAME Security` (GPO, [ADMX](../profiles/windows/admx), Intune ADMX import or registry) | `%ProgramData%\EDAMAME\Managed\secrets.json`, ACL SYSTEM + Administrators only (set it yourself; the app does not inspect the ACL), read by the EDAMAME Helper service |
 
-So for scenario B on macOS and Windows: deploy the app and the PPPC profile
-with the MDM, then have users enroll in the app (email + PIN from the Hub
-invitation, then **Connect Portal** or their own model, then the protection
-button).
+Secrets never go in the profile or the policy key: managed preferences and
+`HKLM\SOFTWARE\Policies` are readable by every local user. The helper runs as
+root / SYSTEM, reads the file and hands it to the app over its authenticated
+local channel. Without the helper (not installed, not running, Store build
+without it) the status says `secrets: unavailable` and the secret-bearing
+settings wait; nothing reads as "no secrets".
 
-### Unsupported interim workaround: edamame_cli against the running app
+Templates: [profiles/macos/edamame-managed-settings.mobileconfig](../profiles/macos/edamame-managed-settings.mobileconfig),
+[profiles/windows/edamame-managed-settings.reg](../profiles/windows/edamame-managed-settings.reg),
+[profiles/windows/admx](../profiles/windows/admx).
 
-The app's core serves the same local RPC interface as the posture daemon, and
-`edamame_cli` (Homebrew `edamametechnologies/tap/edamame-cli`, Chocolatey
-`edamame-cli`, or the `edamame_cli` GitHub releases) can call it. EDAMAME uses
-this internally to inspect running apps. A script running while the user's
-app is open could therefore configure it:
-
-```sh
-# Secrets go through stdin, never on the command line.
-{
-  printf 'set_credentials {"user":"%s","domain":"%s","pin":"%s"}\n' "$U" "$D" "$PIN"
-  printf 'connect_domain\n'
-  printf 'agentic_set_edamame_api_key {"api_key":"%s"}\n' "$KEY"
-  printf 'agentic_set_protection {"enabled":true}\n'
-  printf 'exit\n'
-} | edamame_cli interactive
-```
-
-This is **not validated by this repository and not a supported admin
-interface**: it needs the app running in a user session, the RPC names and
-arguments are internal and can change between releases, and nothing
-prevents the user from changing the values afterwards. It is documented so
-admins know what the product change below replaces.
-
-## Proposed: managed configuration (requires EDAMAME >= 2.1, proposed)
-
-The templates in [profiles/](../profiles) show the proposed keys. They are
-**not read by any released version**.
+## Keys
 
 | Key | Type | Meaning |
 |---|---|---|
-| `OrganizationName` | string | Shown as "Managed by <org>" in the app |
-| `HubEmail` | string | `user@domain`; accepts MDM variables (Jamf `$EMAIL`, Intune `{{mail}}` in macOS custom profiles) |
-| `HubEmailSource` | `upn` / `policy` | Windows: use the signed-in user's UPN instead of a per-device value |
-| `LockHubEnrollment` | bool | User cannot change or disconnect the Hub account |
-| `LLMProvider` | `portal` / `claude` / `openai` / `ollama` / `none` | |
-| `LLMModel`, `LLMBaseURL` | string | |
-| `LockLLM` | bool | User cannot change the LLM |
-| `ProtectionEnabled` | bool | Turns the protection switch on |
-| `AssistantLevel` | `review` / `auto` | |
-| `LockProtection` | bool | User cannot turn protection off |
-| `NetworkMonitoringConsent` | bool | Organization consent for LAN scan / capture (the app still shows the user what is collected) |
+| `OrganizationName` | string | Shown as "Managed by <org>" in the app and its notice |
+| `HubEmail` | string | Hub account `user@domain`; accepts MDM variables (Jamf / Kandji `$EMAIL`, Intune `{{mail}}` in macOS custom profiles). A value still holding `$`, `{{` or `%` is rejected |
+| `HubEmailSource` | `policy` / `upn` | Windows: `upn` enrolls with the signed-in user's user principal name (Entra ID / AD) |
+| `LockHubEnrollment` | bool | The user cannot change or disconnect the Hub account |
+| `LLMProvider` | `portal` / `claude` / `openai` / `ollama` / `none` | The model the Assistant and detection adjudication use |
+| `LLMModel` | string | Claude / OpenAI / Ollama model. Ignored for `portal` |
+| `LLMBaseURL` | string | `https://` or `http://` (Ollama, compatible APIs) |
+| `LockLLM` | bool | The user cannot change the values the policy sets (provider, model, base URL, and the key when the secrets file carries one). Notification settings stay the user's |
+| `ProtectionEnabled` | bool | Turns the protection switch on (or off): the Assistant, attack pattern detection and intent divergence detection |
+| `AssistantLevel` | `review` / `auto` | The Assistant's level |
+| `LockProtection` | bool | The user cannot change protection or the Assistant level away from the policy |
+| `NetworkMonitoringConsent` | bool | The organization consents to LAN scanning on the user's behalf, on every network the device joins |
+| `ShareAIFailureDetails` | bool | `true`: AI failure details are added to score reports; `false`: never. The user cannot change a set value |
+| `CaptureEnabled` | bool | Starts / stops network session capture (needs the helper) |
+| `FileMonitorEnabled` | bool | Starts / stops file event monitoring (needs the helper) |
+| `LockMonitoring` | bool | The user cannot change capture / file monitoring away from the policy; turning protection off leaves them running |
+| `HideAISettings` | bool | Hides the model connection section of Config > AI |
 
-Where they would be read:
+Booleans: plist `<true/>` / `<false/>`, registry `REG_DWORD` 0 / 1, or the
+strings `true` / `false` / `1` / `0`. A lock without the value it locks is
+ignored and reported.
 
-| OS | Non-secret keys | Secrets (Hub PIN, LLM key) |
-|---|---|---|
-| macOS | Configuration profile, preference domain `com.edamametechnologies.edamame` | `/Library/Application Support/EDAMAME/Managed/secrets.json`, `root:wheel 0600`, read by the helper |
-| Windows | `HKLM\SOFTWARE\Policies\EDAMAME\EDAMAME Security` (GPO / ADMX / Intune) | `%ProgramData%\EDAMAME\Managed\secrets.json`, SYSTEM + Administrators, read by the helper |
-| Linux | `/etc/edamame_posture.conf` (already works) | same file |
+### Secrets file
 
-Secrets are kept out of profiles and policy on purpose: managed preferences
-and `HKLM\SOFTWARE\Policies` are readable by every local user, while the
-helper already runs as root / SYSTEM. A per-user PIN is also a poor fit for a
-device-wide profile; the proposal includes a Hub-issued enrollment token
-that an MDM can deploy fleet-wide.
+```json
+{
+  "hub_pin": "123456",
+  "llm_api_key": "edm_... or sk-...",
+  "hub_enrollment_token": null
+}
+```
+
+Every field is optional; unknown fields are an error (a typo would otherwise
+drop a secret silently). `llm_api_key` is the EDAMAME Portal API key when
+`LLMProvider` is `portal`, else the provider's API key. `hub_enrollment_token`
+is reserved for Hub enrollment tokens (not used yet; the Hub PIN is per user,
+so a device-wide file fits one user per device). The app keeps what it
+applied: the LLM key in its OS secret store (Keychain on macOS, DPAPI on
+Windows), the Hub PIN in its per-user settings. You may remove the file after
+enrollment, but then a rotated secret can no longer be re-applied.
+
+macOS:
+
+```sh
+sudo install -d -o root -g wheel -m 0755 "/Library/Application Support/EDAMAME/Managed"
+sudo install -o root -g wheel -m 0600 secrets.json "/Library/Application Support/EDAMAME/Managed/secrets.json"
+```
+
+Windows (elevated PowerShell):
+
+```powershell
+$dir = "$env:ProgramData\EDAMAME\Managed"
+New-Item -ItemType Directory -Force $dir | Out-Null
+icacls $dir /inheritance:r /grant:r "SYSTEM:(OI)(CI)F" "Administrators:(OI)(CI)F"
+Copy-Item secrets.json "$dir\secrets.json"
+```
+
+## When settings apply, and who wins
+
+- The app applies the policy about 5 seconds after it starts, every 15
+  minutes, and when the helper becomes available; Config > Info has an
+  "Apply again" button. No restart is needed after a profile or GPO change.
+- **Locked** values are enforced: re-applied whenever they drift, and the
+  app (and any local program calling its interface) is refused a change.
+- **Unlocked** values are defaults: applied the first time and whenever the
+  organization changes them; a user change in between is kept.
+- **Removed** keys: the last applied value stays, the lock is released.
+- Problems (invalid key, secrets file refused, Hub refused the PIN) are listed
+  in Config > Info and raise one notification.
+
+## What the user sees
+
+Organization consent does not remove the duty to inform the user. When the
+organization turns something on (Hub enrollment, a model, protection, network
+monitoring consent, AI failure sharing, capture / file monitoring), the app
+shows once a notice "This device is managed by <org>" listing each item, and
+whether it is locked, with a link to the privacy policy; the user
+acknowledges it. The notice is shown again when the list changes, and stays
+available from the "Managed configuration" card in Config > Info. Locked
+controls are disabled with a "Set by <org>" explanation.
+
+Analytics and crash-report preferences stay the user's. In France and
+Germany, employee monitoring tools also involve the CSE / works council:
+check with your data protection officer before enabling
+`NetworkMonitoringConsent`.
+
+## Checking
+
+```sh
+edamame_cli rpc get_managed_configuration_status --pretty
+```
+
+reports the source, the managed keys, the locks, `secrets_status` and the
+problems (never a secret).

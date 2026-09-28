@@ -80,9 +80,15 @@ Another option is two line-of-business apps: the MSIX (install context:
 Device) and the helper MSI. Do not use the Chocolatey `edamame` package
 through Intune: it registers the MSIX for the SYSTEM account only.
 
-Hub enrollment and LLM setup are done by the user in the app today
-(managed settings: requires EDAMAME >= 2.1, proposed; see
-[app-configuration.md](../app-configuration.md)).
+Managed settings (EDAMAME >= 2.0.2, see
+[app-configuration.md](../app-configuration.md)): import
+[profiles/windows/admx](../../profiles/windows/admx) through **Devices >
+Configuration > Import ADMX**, then create an **Imported Administrative
+templates** profile; or set the values of
+[edamame-managed-settings.reg](../../profiles/windows/edamame-managed-settings.reg)
+with a remediation script. `HubEmailSource` = `upn` enrolls each device with
+the signed-in user's UPN. Deploy `secrets.json` (Hub PIN, LLM key) with a
+Win32 app or a platform script running as SYSTEM.
 
 ## macOS
 
@@ -109,9 +115,11 @@ deployment channel **Device channel**. Deploy it before the app or posture.
   (`EDAMAME_VERSION` fixed in a private copy's first lines, e.g.
   `export EDAMAME_VERSION=2.0.1`).
 
-Proposed later (requires EDAMAME >= 2.1, proposed): a custom profile built
-from [PROPOSED-edamame-managed-settings.mobileconfig](../../profiles/macos/PROPOSED-edamame-managed-settings.mobileconfig);
-`HubEmail` can use the Intune `{{mail}}` token.
+Managed settings (EDAMAME >= 2.0.2): a custom profile built from
+[edamame-managed-settings.mobileconfig](../../profiles/macos/edamame-managed-settings.mobileconfig);
+`HubEmail` can use the Intune `{{mail}}` token. Deploy
+`/Library/Application Support/EDAMAME/Managed/secrets.json` (root:wheel
+0600) with a shell script running as root.
 
 ## Linux
 

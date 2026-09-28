@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- PROPOSED - NOT READ BY ANY RELEASED EDAMAME VERSION. Requires EDAMAME >= 2.1 (proposed). -->
+<!-- Managed settings for the EDAMAME Security app. Requires EDAMAME >= 2.0.2. -->
 <policyDefinitionResources xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" revision="1.0" schemaVersion="1.0" xmlns="http://schemas.microsoft.com/GroupPolicy/2006/07/PolicyDefinitions">
   <displayName>EDAMAME Security</displayName>
-  <description>Managed settings for the EDAMAME Security app (proposed).</description>
+  <description>Managed settings for the EDAMAME Security app.</description>
   <resources>
     <stringTable>
-      <string id="SUPPORTED_EDAMAME_2_1">EDAMAME Security 2.1 or later (proposed)</string>
+      <string id="SUPPORTED_EDAMAME_2_0_2">EDAMAME Security 2.0.2 or later</string>
       <string id="EDAMAME">EDAMAME</string>
       <string id="EDAMAMESecurity">EDAMAME Security</string>
       <string id="OrganizationName">Organization name</string>
@@ -13,19 +13,19 @@
       <string id="HubEmail">EDAMAME Hub account</string>
       <string id="HubEmail_Help">Hub account as user@domain. Use HubEmailSource=upn instead when every device should enroll with the signed-in user's UPN.</string>
       <string id="LLMModel">LLM model</string>
-      <string id="LLMModel_Help">Model for Claude, OpenAI or Ollama. Ignored for the EDAMAME Portal.</string>
+      <string id="LLMModel_Help">Model for Claude, OpenAI or Ollama. Ignored for the EDAMAME Portal, which chooses its model.</string>
       <string id="LLMBaseURL">LLM base URL</string>
       <string id="LLMBaseURL_Help">Ollama URL, or an API base URL for Claude / OpenAI.</string>
       <string id="LockHubEnrollment">Lock Hub enrollment</string>
-      <string id="LockHubEnrollment_Help">The user cannot change or disconnect the Hub account.</string>
+      <string id="LockHubEnrollment_Help">The user cannot change or disconnect the Hub account. Without the lock, the account is a default: applied when the policy value is new or changes, and the user may change it.</string>
       <string id="LockLLM">Lock LLM configuration</string>
-      <string id="LockLLM_Help">The user cannot change the LLM provider, model or key.</string>
+      <string id="LockLLM_Help">The user cannot change the values this policy sets (provider, model, base URL, and the key when the secrets file delivers one). Notification settings stay the user's.</string>
       <string id="ProtectionEnabled">Turn agentic protection on</string>
       <string id="ProtectionEnabled_Help">Turns on the Assistant, attack pattern detection and divergence detection (the app's protection switch).</string>
       <string id="LockProtection">Lock protection</string>
-      <string id="LockProtection_Help">The user cannot turn protection off.</string>
+      <string id="LockProtection_Help">The user cannot change protection or the Assistant level away from the values this policy sets.</string>
       <string id="NetworkMonitoringConsent">Organization consent for network monitoring</string>
-      <string id="NetworkMonitoringConsent_Help">The organization consents to LAN scanning and traffic capture on behalf of the user. The app still shows the user what is collected.</string>
+      <string id="NetworkMonitoringConsent_Help">The organization consents to LAN scanning on behalf of the user (every network the device joins). The app still shows the user a notice of what the organization turned on.</string>
       <string id="HubEmailSource">Hub account source</string>
       <string id="HubEmailSource_Help">upn: use the signed-in Windows user's UPN as the Hub account (Entra ID / AD joined devices).</string>
       <string id="HubEmailSource_upn">Signed-in user UPN</string>
@@ -41,6 +41,16 @@
       <string id="AssistantLevel_Help">review: the Assistant proposes, the user confirms. auto: the Assistant applies low-risk remediations.</string>
       <string id="AssistantLevel_review">Review</string>
       <string id="AssistantLevel_auto">Auto</string>
+      <string id="ShareAIFailureDetails">Share AI failure details with the Hub</string>
+      <string id="ShareAIFailureDetails_Help">Enabled: the organization consents to AI failure details being added to score reports. Disabled: they are never shared. Not configured: the user decides. The user cannot change a configured value.</string>
+      <string id="CaptureEnabled">Session capture</string>
+      <string id="CaptureEnabled_Help">Starts (enabled) or stops (disabled) network session capture. Needs the EDAMAME Helper.</string>
+      <string id="FileMonitorEnabled">File event monitoring</string>
+      <string id="FileMonitorEnabled_Help">Starts (enabled) or stops (disabled) file event monitoring. Needs the EDAMAME Helper.</string>
+      <string id="LockMonitoring">Lock session capture and file monitoring</string>
+      <string id="LockMonitoring_Help">The user cannot change session capture or file event monitoring away from the values set above, and turning protection off leaves them running.</string>
+      <string id="HideAISettings">Hide the AI model settings</string>
+      <string id="HideAISettings_Help">Hides the model connection section of Config > AI.</string>
     </stringTable>
     <presentationTable>
       <presentation id="OrganizationName">

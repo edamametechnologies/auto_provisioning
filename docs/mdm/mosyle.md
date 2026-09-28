@@ -25,5 +25,7 @@ run as root). Screen names differ between Mosyle editions; the pattern is
 deployment): upload `edamame-macos-<ver>.pkg`, or run
 `scripts/macos/install-edamame-app.sh` as a Custom Command.
 
-Users then enroll in the app (managed settings: requires EDAMAME >= 2.1,
-proposed).
+With EDAMAME >= 2.0.2, a Custom Profile built from
+[edamame-managed-settings.mobileconfig](../../profiles/macos/edamame-managed-settings.mobileconfig)
+enrolls the app; see [app-configuration.md](../app-configuration.md) for the
+secrets file. Earlier versions: users enroll in the app.

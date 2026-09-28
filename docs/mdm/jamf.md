@@ -77,7 +77,7 @@ v=$(defaults read "/Applications/EDAMAME Security.app/Contents/Info" CFBundleSho
 echo "<result>${v}</result>"
 ```
 
-Proposed later (requires EDAMAME >= 2.1, proposed): upload
-[PROPOSED-edamame-managed-settings.mobileconfig](../../profiles/macos/PROPOSED-edamame-managed-settings.mobileconfig)
+Managed settings (EDAMAME >= 2.0.2): upload
+[edamame-managed-settings.mobileconfig](../../profiles/macos/edamame-managed-settings.mobileconfig)
 as a configuration profile (Application & Custom Settings); `HubEmail` =
 `$EMAIL` uses Jamf's payload variable for the assigned user's email.

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- PROPOSED - NOT READ BY ANY RELEASED EDAMAME VERSION. Requires EDAMAME >= 2.1 (proposed). -->
+<!-- Managed settings for the EDAMAME Security app. Requires EDAMAME >= 2.0.2. -->
 <policyDefinitions xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" revision="1.0" schemaVersion="1.0" xmlns="http://schemas.microsoft.com/GroupPolicy/2006/07/PolicyDefinitions">
   <policyNamespaces>
     <target prefix="edamame" namespace="EDAMAME.Policies.EDAMAMESecurity" />
@@ -8,7 +8,7 @@
   <resources minRequiredRevision="1.0" />
   <supportedOn>
     <definitions>
-      <definition name="SUPPORTED_EDAMAME_2_1" displayName="$(string.SUPPORTED_EDAMAME_2_1)" />
+      <definition name="SUPPORTED_EDAMAME_2_0_2" displayName="$(string.SUPPORTED_EDAMAME_2_0_2)" />
     </definitions>
   </supportedOn>
   <categories>
@@ -20,35 +20,35 @@
   <policies>
     <policy name="OrganizationName" class="Machine" displayName="$(string.OrganizationName)" explainText="$(string.OrganizationName_Help)" presentation="$(presentation.OrganizationName)" key="SOFTWARE\Policies\EDAMAME\EDAMAME Security">
       <parentCategory ref="EDAMAMESecurity" />
-      <supportedOn ref="SUPPORTED_EDAMAME_2_1" />
+      <supportedOn ref="SUPPORTED_EDAMAME_2_0_2" />
       <elements>
         <text id="OrganizationName" valueName="OrganizationName" maxLength="128" />
       </elements>
     </policy>
     <policy name="HubEmail" class="Machine" displayName="$(string.HubEmail)" explainText="$(string.HubEmail_Help)" presentation="$(presentation.HubEmail)" key="SOFTWARE\Policies\EDAMAME\EDAMAME Security">
       <parentCategory ref="EDAMAMESecurity" />
-      <supportedOn ref="SUPPORTED_EDAMAME_2_1" />
+      <supportedOn ref="SUPPORTED_EDAMAME_2_0_2" />
       <elements>
         <text id="HubEmail" valueName="HubEmail" maxLength="256" />
       </elements>
     </policy>
     <policy name="LLMModel" class="Machine" displayName="$(string.LLMModel)" explainText="$(string.LLMModel_Help)" presentation="$(presentation.LLMModel)" key="SOFTWARE\Policies\EDAMAME\EDAMAME Security">
       <parentCategory ref="EDAMAMESecurity" />
-      <supportedOn ref="SUPPORTED_EDAMAME_2_1" />
+      <supportedOn ref="SUPPORTED_EDAMAME_2_0_2" />
       <elements>
         <text id="LLMModel" valueName="LLMModel" maxLength="128" />
       </elements>
     </policy>
     <policy name="LLMBaseURL" class="Machine" displayName="$(string.LLMBaseURL)" explainText="$(string.LLMBaseURL_Help)" presentation="$(presentation.LLMBaseURL)" key="SOFTWARE\Policies\EDAMAME\EDAMAME Security">
       <parentCategory ref="EDAMAMESecurity" />
-      <supportedOn ref="SUPPORTED_EDAMAME_2_1" />
+      <supportedOn ref="SUPPORTED_EDAMAME_2_0_2" />
       <elements>
         <text id="LLMBaseURL" valueName="LLMBaseURL" maxLength="512" />
       </elements>
     </policy>
     <policy name="HubEmailSource" class="Machine" displayName="$(string.HubEmailSource)" explainText="$(string.HubEmailSource_Help)" presentation="$(presentation.HubEmailSource)" key="SOFTWARE\Policies\EDAMAME\EDAMAME Security">
       <parentCategory ref="EDAMAMESecurity" />
-      <supportedOn ref="SUPPORTED_EDAMAME_2_1" />
+      <supportedOn ref="SUPPORTED_EDAMAME_2_0_2" />
       <elements>
         <enum id="HubEmailSource" valueName="HubEmailSource">
           <item displayName="$(string.HubEmailSource_upn)">
@@ -66,7 +66,7 @@
     </policy>
     <policy name="LLMProvider" class="Machine" displayName="$(string.LLMProvider)" explainText="$(string.LLMProvider_Help)" presentation="$(presentation.LLMProvider)" key="SOFTWARE\Policies\EDAMAME\EDAMAME Security">
       <parentCategory ref="EDAMAMESecurity" />
-      <supportedOn ref="SUPPORTED_EDAMAME_2_1" />
+      <supportedOn ref="SUPPORTED_EDAMAME_2_0_2" />
       <elements>
         <enum id="LLMProvider" valueName="LLMProvider">
           <item displayName="$(string.LLMProvider_portal)">
@@ -99,7 +99,7 @@
     </policy>
     <policy name="AssistantLevel" class="Machine" displayName="$(string.AssistantLevel)" explainText="$(string.AssistantLevel_Help)" presentation="$(presentation.AssistantLevel)" key="SOFTWARE\Policies\EDAMAME\EDAMAME Security">
       <parentCategory ref="EDAMAMESecurity" />
-      <supportedOn ref="SUPPORTED_EDAMAME_2_1" />
+      <supportedOn ref="SUPPORTED_EDAMAME_2_0_2" />
       <elements>
         <enum id="AssistantLevel" valueName="AssistantLevel">
           <item displayName="$(string.AssistantLevel_review)">
@@ -117,7 +117,7 @@
     </policy>
     <policy name="LockHubEnrollment" class="Machine" displayName="$(string.LockHubEnrollment)" explainText="$(string.LockHubEnrollment_Help)" key="SOFTWARE\Policies\EDAMAME\EDAMAME Security" valueName="LockHubEnrollment">
       <parentCategory ref="EDAMAMESecurity" />
-      <supportedOn ref="SUPPORTED_EDAMAME_2_1" />
+      <supportedOn ref="SUPPORTED_EDAMAME_2_0_2" />
       <enabledValue>
         <decimal value="1" />
       </enabledValue>
@@ -127,7 +127,7 @@
     </policy>
     <policy name="LockLLM" class="Machine" displayName="$(string.LockLLM)" explainText="$(string.LockLLM_Help)" key="SOFTWARE\Policies\EDAMAME\EDAMAME Security" valueName="LockLLM">
       <parentCategory ref="EDAMAMESecurity" />
-      <supportedOn ref="SUPPORTED_EDAMAME_2_1" />
+      <supportedOn ref="SUPPORTED_EDAMAME_2_0_2" />
       <enabledValue>
         <decimal value="1" />
       </enabledValue>
@@ -137,7 +137,7 @@
     </policy>
     <policy name="ProtectionEnabled" class="Machine" displayName="$(string.ProtectionEnabled)" explainText="$(string.ProtectionEnabled_Help)" key="SOFTWARE\Policies\EDAMAME\EDAMAME Security" valueName="ProtectionEnabled">
       <parentCategory ref="EDAMAMESecurity" />
-      <supportedOn ref="SUPPORTED_EDAMAME_2_1" />
+      <supportedOn ref="SUPPORTED_EDAMAME_2_0_2" />
       <enabledValue>
         <decimal value="1" />
       </enabledValue>
@@ -147,7 +147,7 @@
     </policy>
     <policy name="LockProtection" class="Machine" displayName="$(string.LockProtection)" explainText="$(string.LockProtection_Help)" key="SOFTWARE\Policies\EDAMAME\EDAMAME Security" valueName="LockProtection">
       <parentCategory ref="EDAMAMESecurity" />
-      <supportedOn ref="SUPPORTED_EDAMAME_2_1" />
+      <supportedOn ref="SUPPORTED_EDAMAME_2_0_2" />
       <enabledValue>
         <decimal value="1" />
       </enabledValue>
@@ -157,7 +157,57 @@
     </policy>
     <policy name="NetworkMonitoringConsent" class="Machine" displayName="$(string.NetworkMonitoringConsent)" explainText="$(string.NetworkMonitoringConsent_Help)" key="SOFTWARE\Policies\EDAMAME\EDAMAME Security" valueName="NetworkMonitoringConsent">
       <parentCategory ref="EDAMAMESecurity" />
-      <supportedOn ref="SUPPORTED_EDAMAME_2_1" />
+      <supportedOn ref="SUPPORTED_EDAMAME_2_0_2" />
+      <enabledValue>
+        <decimal value="1" />
+      </enabledValue>
+      <disabledValue>
+        <decimal value="0" />
+      </disabledValue>
+    </policy>
+    <policy name="ShareAIFailureDetails" class="Machine" displayName="$(string.ShareAIFailureDetails)" explainText="$(string.ShareAIFailureDetails_Help)" key="SOFTWARE\Policies\EDAMAME\EDAMAME Security" valueName="ShareAIFailureDetails">
+      <parentCategory ref="EDAMAMESecurity" />
+      <supportedOn ref="SUPPORTED_EDAMAME_2_0_2" />
+      <enabledValue>
+        <decimal value="1" />
+      </enabledValue>
+      <disabledValue>
+        <decimal value="0" />
+      </disabledValue>
+    </policy>
+    <policy name="CaptureEnabled" class="Machine" displayName="$(string.CaptureEnabled)" explainText="$(string.CaptureEnabled_Help)" key="SOFTWARE\Policies\EDAMAME\EDAMAME Security" valueName="CaptureEnabled">
+      <parentCategory ref="EDAMAMESecurity" />
+      <supportedOn ref="SUPPORTED_EDAMAME_2_0_2" />
+      <enabledValue>
+        <decimal value="1" />
+      </enabledValue>
+      <disabledValue>
+        <decimal value="0" />
+      </disabledValue>
+    </policy>
+    <policy name="FileMonitorEnabled" class="Machine" displayName="$(string.FileMonitorEnabled)" explainText="$(string.FileMonitorEnabled_Help)" key="SOFTWARE\Policies\EDAMAME\EDAMAME Security" valueName="FileMonitorEnabled">
+      <parentCategory ref="EDAMAMESecurity" />
+      <supportedOn ref="SUPPORTED_EDAMAME_2_0_2" />
+      <enabledValue>
+        <decimal value="1" />
+      </enabledValue>
+      <disabledValue>
+        <decimal value="0" />
+      </disabledValue>
+    </policy>
+    <policy name="LockMonitoring" class="Machine" displayName="$(string.LockMonitoring)" explainText="$(string.LockMonitoring_Help)" key="SOFTWARE\Policies\EDAMAME\EDAMAME Security" valueName="LockMonitoring">
+      <parentCategory ref="EDAMAMESecurity" />
+      <supportedOn ref="SUPPORTED_EDAMAME_2_0_2" />
+      <enabledValue>
+        <decimal value="1" />
+      </enabledValue>
+      <disabledValue>
+        <decimal value="0" />
+      </disabledValue>
+    </policy>
+    <policy name="HideAISettings" class="Machine" displayName="$(string.HideAISettings)" explainText="$(string.HideAISettings_Help)" key="SOFTWARE\Policies\EDAMAME\EDAMAME Security" valueName="HideAISettings">
+      <parentCategory ref="EDAMAMESecurity" />
+      <supportedOn ref="SUPPORTED_EDAMAME_2_0_2" />
       <enabledValue>
         <decimal value="1" />
       </enabledValue>

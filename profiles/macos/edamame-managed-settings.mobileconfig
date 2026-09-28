@@ -1,22 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <!--
-  PROPOSED -- NOT READ BY ANY RELEASED EDAMAME VERSION.
-  Requires EDAMAME >= 2.1 (proposed). Installing this profile today has no
-  effect. It documents the managed keys proposed for the EDAMAME Security app
-  (preference domain = the app's bundle identifier,
-  com.edamametechnologies.edamame).
+  Managed settings for the EDAMAME Security app. Requires EDAMAME >= 2.0.2.
+  Preference domain = the app's bundle identifier, com.edamametechnologies.edamame.
+  The app reads only forced (profile-delivered) values; device or user scope.
 
-  Secrets (Hub PIN, LLM API key) are deliberately NOT keys of this profile:
-  managed preferences are readable by local users. The proposal delivers them
-  in a root-only file read by the EDAMAME Helper (see docs/app-configuration.md).
+  Secrets (Hub PIN, LLM / Portal API key) are deliberately NOT keys of this
+  profile: managed preferences are readable by local users. Deploy them in
+  /Library/Application Support/EDAMAME/Managed/secrets.json (root:wheel 0600),
+  read by the EDAMAME Helper (see docs/app-configuration.md).
 
   HubEmail accepts MDM variables, e.g. Jamf $EMAIL or Intune {{mail}}.
+  Remove the keys you do not want to manage: an absent key is left to the user.
 -->
 <plist version="1.0">
 <dict>
     <key>PayloadDisplayName</key>
-    <string>EDAMAME Security - Managed Settings (PROPOSED)</string>
+    <string>EDAMAME Security - Managed Settings</string>
     <key>PayloadIdentifier</key>
     <string>com.edamametechnologies.mdm.managed-settings</string>
     <key>PayloadOrganization</key>
@@ -69,6 +69,19 @@
 
             <key>NetworkMonitoringConsent</key>
             <true/>
+
+            <key>ShareAIFailureDetails</key>
+            <true/>
+
+            <key>CaptureEnabled</key>
+            <true/>
+            <key>FileMonitorEnabled</key>
+            <true/>
+            <key>LockMonitoring</key>
+            <false/>
+
+            <key>HideAISettings</key>
+            <false/>
         </dict>
     </array>
 </dict>
