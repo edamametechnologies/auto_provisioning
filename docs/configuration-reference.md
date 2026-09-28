@@ -12,6 +12,9 @@ Read from the source of `edamame_posture` 2.0.1 / 2.0.2 (`src/cli.rs`,
 | `background-start` (alias `start`) | Forks a background daemon. Used by `install.sh` on macOS / Windows; does not survive a reboot |
 | `background-start-disconnected` | Background daemon without Hub credentials |
 | `background-stop` (alias `stop`), `status`, `wait-for-connection [timeout]`, `logs` | Control of a running daemon |
+| `install-service [--conf <path>] [--no-start]` | EDAMAME >= 2.0.2. Registers and starts the native service (macOS LaunchDaemon `com.edamametechnologies.edamame-posture`, Windows service `edamame_posture`, systemd unit for raw Linux binaries) running `service-run --conf <path>`. Re-running it updates the service (Windows: refreshes the copy in `%ProgramFiles%\EDAMAME\Posture`). Refuses on Linux when the APT/APK package provides the unit |
+| `uninstall-service [--conf <path>] [--purge]` | EDAMAME >= 2.0.2. Stops and removes that service; `--purge` deletes the configuration |
+| `service-run [--conf <path>]` | EDAMAME >= 2.0.2. What the service runs: reads the configuration file below (Linux format) and runs the daemon in the foreground in-process, so secrets never reach a command line. Default path: `/Library/Application Support/EDAMAME/EDAMAME-Posture/edamame_posture.conf` (macOS), `%ProgramData%\EDAMAME\Posture\edamame_posture.conf` (Windows), `/etc/edamame_posture.conf` (Linux) |
 
 Options shared by `foreground-start` and `background-start`:
 
@@ -67,7 +70,14 @@ mode `0600`; it is a dpkg conffile, so install with
 | `start_lanscan`, `start_capture`, `whitelist_name`, `fail_on_whitelist`, `fail_on_blacklist`, `fail_on_findings`, `cancel_on_violation`, `include_local_traffic` | `true`/`false`, string | Network monitoring flags |
 | `notification_*`, `slack_*`, `telegram_*` | strings | Slack / Telegram notifications |
 
-Values are double-quoted; inside quotes `\"` and `\\` are escapes. The file
+Values are double-quoted; inside quotes `\"` and `\\` are escapes.
+
+`service-run` (EDAMAME >= 2.0.2, macOS / Windows / raw Linux binaries) reads
+the same keys with the same rules, plus `llm_model`, `llm_base_url` (API base
+URL for claude / openai, or the Ollama URL when `ollama_base_url` is empty)
+and `edamame_pin_file` (a root-only file holding the PIN, used when
+`edamame_pin` is empty). It refuses a file that is not owned by root or is
+writable by other users. Up to 2.0.1 the Linux wrapper's file
 has no key for the model or for a claude / openai base URL: the Linux script
 and the Ansible role put `EDAMAME_LLM_MODEL` / `EDAMAME_LLM_BASE_URL` in the
 systemd drop-in `/etc/systemd/system/edamame_posture.service.d/50-edamame-provisioning.conf`
@@ -82,8 +92,8 @@ also configures the desktop app on Linux.
 | Script | Binary | Configuration (secrets) | Service | Logs |
 |---|---|---|---|---|
 | `scripts/linux/install-edamame-posture.sh` | APT/APK package | `/etc/edamame_posture.conf` `0600 root`; drop-in for model / base URL | `edamame_posture.service` (enabled, restarted on change) | `/var/log/edamame-provisioning.log`; daemon: `journalctl -u edamame_posture` |
-| `scripts/macos/install-edamame-posture.sh` | PKG → `/Library/Application Support/EDAMAME/EDAMAME-Posture/edamame_posture.app` | `/Library/Application Support/EDAMAME/Provisioning/edamame_posture.conf` `0600 root:wheel` (same line format; one `llm_api_key` slot plus `llm_model`, `llm_base_url`) | LaunchDaemon `com.edamametechnologies.auto-provisioning.posture` → `/bin/sh .../Provisioning/edamame_posture_launcher.sh` → `foreground-start` (KeepAlive) | `/Library/Logs/EDAMAME/provisioning.log`, `/Library/Logs/EDAMAME/edamame_posture_daemon.log`; daemon: `/var/log/edamame/edamame_posture_*.log` |
-| `scripts/windows/Install-EdamamePosture.ps1` | `%ProgramFiles%\EDAMAME\Posture\edamame_posture.exe` | `%ProgramData%\EDAMAME\Provisioning\posture.json` (directory ACL: SYSTEM + Administrators) | Scheduled task `\EDAMAME\EDAMAME Posture` (SYSTEM, at startup, no time limit) → `Start-EdamamePosture.ps1` loop → `foreground-start` | `%ProgramData%\EDAMAME\Provisioning\Logs\`; daemon: log files beside the exe |
+| `scripts/macos/install-edamame-posture.sh` | PKG → `/Library/Application Support/EDAMAME/EDAMAME-Posture/edamame_posture.app` | `/Library/Application Support/EDAMAME/Provisioning/edamame_posture.conf` `0600 root:wheel` (Linux line format: `llm_api_key` plus the provider slots `claude_api_key` / `openai_api_key`, `llm_model`, `llm_base_url`) | EDAMAME >= 2.0.2: the product's LaunchDaemon `com.edamametechnologies.edamame-posture` (`install-service --conf` that file; the script removes its own older daemon). Older: LaunchDaemon `com.edamametechnologies.auto-provisioning.posture` → `/bin/sh .../Provisioning/edamame_posture_launcher.sh` → `foreground-start` (KeepAlive) | `/Library/Logs/EDAMAME/provisioning.log`; service: `/var/log/edamame_posture_service.log` (>= 2.0.2) or `/Library/Logs/EDAMAME/edamame_posture_daemon.log`; daemon: `/var/log/edamame/edamame_posture_*.log` |
+| `scripts/windows/Install-EdamamePosture.ps1` | `%ProgramFiles%\EDAMAME\Posture\edamame_posture.exe` | `%ProgramData%\EDAMAME\Provisioning\posture.json`, and from 2.0.2 its Linux-format rendering `edamame_posture.conf` read by the service (directory ACL: SYSTEM + Administrators) | EDAMAME >= 2.0.2: Windows service `edamame_posture` (`install-service --conf` that file; the script removes its own scheduled task). Older: scheduled task `\EDAMAME\EDAMAME Posture` (SYSTEM, at startup, no time limit) → `Start-EdamamePosture.ps1` loop → `foreground-start` | `%ProgramData%\EDAMAME\Provisioning\Logs\`; service start errors: `%ProgramData%\EDAMAME\Posture\edamame_posture_service.log`; daemon: log files beside the exe |
 | `scripts/macos/install-edamame-app.sh` | PKG (app + helper) | none | helper LaunchDaemon from the PKG | `/Library/Logs/EDAMAME/provisioning.log` |
 | `scripts/windows/Install-EdamameApp.ps1` | Burn bundle (helper MSI + MSIX) | none | `edamame_helper` service from the MSI | `%ProgramData%\EDAMAME\Provisioning\Logs\` |
 

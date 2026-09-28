@@ -51,7 +51,9 @@ input type Script):
 #!/bin/sh
 p="/Library/Application Support/EDAMAME/EDAMAME-Posture/edamame_posture.app/Contents/Info"
 v=$(defaults read "$p" CFBundleShortVersionString 2>/dev/null || echo none)
-r=$(launchctl print system/com.edamametechnologies.auto-provisioning.posture 2>/dev/null | awk '/state =/{print $3; exit}')
+# EDAMAME >= 2.0.2 runs the product's LaunchDaemon; older releases the script's own.
+r=$(launchctl print system/com.edamametechnologies.edamame-posture 2>/dev/null | awk '/state =/{print $3; exit}')
+[ -n "$r" ] || r=$(launchctl print system/com.edamametechnologies.auto-provisioning.posture 2>/dev/null | awk '/state =/{print $3; exit}')
 echo "<result>${v} ${r:-not-loaded}</result>"
 ```
 

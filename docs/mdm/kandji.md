@@ -20,7 +20,9 @@ and assign it to the Blueprint before the apps.
   with the embedded-settings block filled in (Kandji does not pass
   parameters). Restrict who can view the Library item.
 - Optional remediation pattern: audit script =
-  `launchctl print system/com.edamametechnologies.auto-provisioning.posture | grep -q "state = running"`,
+  `launchctl print system/com.edamametechnologies.edamame-posture | grep -q "state = running"`
+  (EDAMAME >= 2.0.2; older releases:
+  `system/com.edamametechnologies.auto-provisioning.posture`),
   remediation script = the private copy.
 
 ## App (scenario B)

@@ -112,6 +112,14 @@
                     <key>RuleType</key>
                     <string>Label</string>
                     <key>RuleValue</key>
+                    <string>com.edamametechnologies.edamame-posture</string>
+                    <key>Comment</key>
+                    <string>EDAMAME Posture service (edamame_posture install-service, EDAMAME &gt;= 2.0.2)</string>
+                </dict>
+                <dict>
+                    <key>RuleType</key>
+                    <string>Label</string>
+                    <key>RuleValue</key>
                     <string>com.edamametechnologies.auto-provisioning.posture</string>
                     <key>Comment</key>
                     <string>EDAMAME Posture daemon installed by auto_provisioning (runs /bin/sh, so the Team ID rule does not cover it)</string>

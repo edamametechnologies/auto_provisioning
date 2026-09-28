@@ -36,8 +36,8 @@ Detect / report:
 | OS | Installed | Running |
 |---|---|---|
 | Linux | `dpkg-query -W edamame-posture` | `systemctl is-active edamame_posture` |
-| macOS | `defaults read "/Library/Application Support/EDAMAME/EDAMAME-Posture/edamame_posture.app/Contents/Info" CFBundleShortVersionString` | `launchctl print system/com.edamametechnologies.auto-provisioning.posture` |
-| Windows | `%ProgramData%\EDAMAME\Provisioning\installed.json` (version, sha256) | `Get-ScheduledTask -TaskPath \EDAMAME\ -TaskName "EDAMAME Posture"`, process `edamame_posture` |
+| macOS | `defaults read "/Library/Application Support/EDAMAME/EDAMAME-Posture/edamame_posture.app/Contents/Info" CFBundleShortVersionString` | EDAMAME >= 2.0.2: `launchctl print system/com.edamametechnologies.edamame-posture`; older: `launchctl print system/com.edamametechnologies.auto-provisioning.posture` |
+| Windows | `%ProgramData%\EDAMAME\Provisioning\installed.json` (version, sha256) | EDAMAME >= 2.0.2: `Get-Service edamame_posture`; older: `Get-ScheduledTask -TaskPath \EDAMAME\ -TaskName "EDAMAME Posture"`, process `edamame_posture` |
 
 `edamame_posture status` (any OS, as root / admin) prints the daemon's Hub
 connection and agentic state.

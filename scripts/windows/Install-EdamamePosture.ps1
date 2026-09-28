@@ -6,16 +6,22 @@
 
 .DESCRIPTION
     1. Gets edamame_posture.exe (x86_64) from the GitHub release (default) or
-       from Chocolatey (-Source choco), verifies its SHA-256 against the digest
-       GitHub publishes for the asset (or -Sha256) and its Authenticode
-       signature (signer O=EDAMAME TECHNOLOGIES SAS), and installs it to
+       from Chocolatey (-Source choco), verifies its SHA-256 against the
+       release's SHA256SUMS (EDAMAME >= 2.0.2) or the digest GitHub publishes
+       for the asset (or -Sha256) and its Authenticode signature (signer
+       O=EDAMAME TECHNOLOGIES SAS), and installs it to
        %ProgramFiles%\EDAMAME\Posture.
     2. Writes %ProgramData%\EDAMAME\Provisioning\posture.json (ACL: SYSTEM and
        Administrators only) holding the Hub enrollment and LLM configuration.
-    3. Registers the scheduled task \EDAMAME\EDAMAME Posture (SYSTEM, at
-       startup, no time limit) that runs Start-EdamamePosture.ps1, which reads
-       posture.json and keeps `edamame_posture foreground-start` running.
-       edamame_posture ships no Windows service today.
+    3. EDAMAME >= 2.0.2: renders it as edamame_posture.conf (Linux format, same
+       directory) and registers the product's Windows service with
+       `edamame_posture install-service --conf <that file>` (service
+       edamame_posture, LocalSystem, automatic, restart on failure), which
+       reads the file itself: the PIN never reaches a command line.
+       Older releases ship no Windows service: the script then registers the
+       scheduled task \EDAMAME\EDAMAME Posture (SYSTEM, at startup, no time
+       limit) running Start-EdamamePosture.ps1, which reads posture.json and
+       keeps `edamame_posture foreground-start` running.
 
     Idempotent: nothing is downloaded when the installed binary already matches
     the requested release, and the task restarts only when the binary or the
@@ -101,6 +107,8 @@ $Launcher    = Join-Path $InstallDir 'Start-EdamamePosture.ps1'
 $ProvDir     = Join-Path $env:ProgramData 'EDAMAME\Provisioning'
 $ConfigPath  = Join-Path $ProvDir 'posture.json'
 $StatePath   = Join-Path $ProvDir 'installed.json'
+$NativeConf  = Join-Path $ProvDir 'edamame_posture.conf'
+$ServiceName = 'edamame_posture'
 $LogDir      = Join-Path $ProvDir 'Logs'
 $LogFile     = Join-Path $LogDir 'provisioning.log'
 $TaskPath    = '\EDAMAME\'
@@ -165,7 +173,63 @@ function Get-GitHubRelease([string]$Ver) {
     }
 }
 
+function Test-NativeService {
+    # EDAMAME >= 2.0.2 binaries have `install-service`.
+    if (-not (Test-Path -LiteralPath $Exe)) { return $false }
+    & $Exe install-service --help *> $null
+    return ($LASTEXITCODE -eq 0)
+}
+
+function Format-ConfValue([string]$Value) {
+    return '"' + (($Value -replace '\\', '\\') -replace '"', '\"') + '"'
+}
+
+function ConvertTo-PostureConf($Cfg) {
+    # Linux conf format read by `edamame_posture service-run`. The key goes to
+    # its provider's slot (llm_api_key is the Portal slot there).
+    $key = [string]$Cfg.llm_api_key
+    $lines = @(
+        '# EDAMAME Posture configuration, written by the EDAMAME auto_provisioning Windows script.',
+        '# Read by edamame_posture service-run (EDAMAME >= 2.0.2). Holds the Hub PIN and the LLM key.'
+    )
+    $pairs = [ordered]@{
+        edamame_user      = $Cfg.user
+        edamame_domain    = $Cfg.domain
+        edamame_pin       = $Cfg.pin
+        edamame_device_id = $Cfg.device_id
+        agentic_mode      = $Cfg.agentic_mode
+        agentic_provider  = $Cfg.agentic_provider
+        agentic_interval  = [string]$Cfg.agentic_interval
+        llm_api_key       = $(if ($Cfg.agentic_provider -eq 'edamame') { $key } else { '' })
+        claude_api_key    = $(if ($Cfg.agentic_provider -eq 'claude') { $key } else { '' })
+        openai_api_key    = $(if ($Cfg.agentic_provider -eq 'openai') { $key } else { '' })
+        llm_model         = $Cfg.llm_model
+        llm_base_url      = $Cfg.llm_base_url
+    }
+    foreach ($k in $pairs.Keys) { $lines += ('{0}: {1}' -f $k, (Format-ConfValue ([string]$pairs[$k]))) }
+    return ($lines -join "`r`n") + "`r`n"
+}
+
+function Get-ReleaseSums([string]$Ver) {
+    # EDAMAME >= 2.0.2: SHA256SUMS on the release, no GitHub API (rate limit)
+    # needed. Returns @{ Version; Sha256 } or $null when the release has none.
+    $base = if ($Ver -eq 'latest') { "https://github.com/$Repo/releases/latest/download" } else { "https://github.com/$Repo/releases/download/v$Ver" }
+    try {
+        $sums = (Invoke-WebRequest -UseBasicParsing -Uri "$base/SHA256SUMS").Content
+    } catch {
+        return $null
+    }
+    if ($sums -is [byte[]]) { $sums = [Text.Encoding]::ASCII.GetString($sums) }
+    $verPattern = if ($Ver -eq 'latest') { '[0-9]+(?:\.[0-9]+)*' } else { [regex]::Escape($Ver) }
+    $m = [regex]::Match($sums, "(?m)^([0-9a-f]{64})  edamame_posture-($verPattern)-x86_64-pc-windows-msvc\.exe\r?$")
+    if (-not $m.Success) { Stop-WithCode 5 "SHA256SUMS of $base lists no Windows executable" }
+    return @{ Version = $m.Groups[2].Value; Sha256 = $m.Groups[1].Value }
+}
+
 function Stop-Posture {
+    # The product's service first, so the SCM does not restart it.
+    $svc = Get-Service -Name $ServiceName -ErrorAction SilentlyContinue
+    if ($svc -and $svc.Status -ne 'Stopped') { Stop-Service -Name $ServiceName -Force -ErrorAction SilentlyContinue }
     $task = Get-ScheduledTask -TaskPath $TaskPath -TaskName $TaskName -ErrorAction SilentlyContinue
     if ($task) { Stop-ScheduledTask -TaskPath $TaskPath -TaskName $TaskName -ErrorAction SilentlyContinue }
     # Launcher loop and any daemon started earlier with `edamame_posture start`.
@@ -295,10 +359,11 @@ if ($P.Source -notin @('github', 'choco')) { Stop-WithCode 2 'Source must be git
 # ---------------------------------------------------------------------------
 if ($P.Action -eq 'uninstall') {
     Write-ProvLog 'Uninstalling EDAMAME Posture'
+    if (Test-NativeService) { & $Exe uninstall-service | Out-File -Append -FilePath $LogFile -Encoding UTF8 }
     Stop-Posture
     Unregister-ScheduledTask -TaskPath $TaskPath -TaskName $TaskName -Confirm:$false -ErrorAction SilentlyContinue
     Remove-Item -LiteralPath $InstallDir -Recurse -Force -ErrorAction SilentlyContinue
-    Remove-Item -LiteralPath $ConfigPath, $StatePath -Force -ErrorAction SilentlyContinue
+    Remove-Item -LiteralPath $ConfigPath, $StatePath, $NativeConf -Force -ErrorAction SilentlyContinue
     Remove-Item -LiteralPath (Join-Path $ProvDir 'state') -Recurse -Force -ErrorAction SilentlyContinue
     Write-ProvLog 'Uninstall complete (logs kept in %ProgramData%\EDAMAME\Provisioning\Logs)'
     exit 0
@@ -375,8 +440,14 @@ try {
             if (-not (Test-Path -LiteralPath $candidate)) { Stop-WithCode 6 "choco did not install $candidate" }
             $expected = Get-Sha256 $candidate   # Chocolatey verified its own package checksum
         } else {
+            $fromSums = $null
+            if (-not $P.Sha256) { $fromSums = Get-ReleaseSums $P.Version }
             if ($P.Sha256) {
                 $expected = $P.Sha256
+            } elseif ($fromSums) {
+                $targetVersion = $fromSums.Version
+                $expected = $fromSums.Sha256
+                Write-ProvLog "Expected SHA-256 from the release's SHA256SUMS (v$targetVersion)"
             } else {
                 $rel = Get-GitHubRelease $P.Version
                 $targetVersion = ([string]$rel.tag_name).TrimStart('v')
@@ -420,6 +491,43 @@ try {
         Write-ProvLog "Configuration written to $ConfigPath"
     }
     New-Item -ItemType Directory -Force -Path (Join-Path $ProvDir 'state') | Out-Null
+
+    if (Test-NativeService) {
+        # -------------------------------------------------------------------
+        # EDAMAME >= 2.0.2: the product's Windows service reads $NativeConf.
+        # -------------------------------------------------------------------
+        $confText = ConvertTo-PostureConf $cur
+        $oldConf = if (Test-Path -LiteralPath $NativeConf) { [IO.File]::ReadAllText($NativeConf) } else { '' }
+        if ($confText -ne $oldConf) {
+            [IO.File]::WriteAllText($NativeConf, $confText, (New-Object Text.UTF8Encoding($false)))
+            $configChanged = $true
+            Write-ProvLog "Service configuration written to $NativeConf"
+        }
+        $legacy = [bool](Get-ScheduledTask -TaskPath $TaskPath -TaskName $TaskName -ErrorAction SilentlyContinue) -or (Test-Path -LiteralPath $Launcher)
+        if ($legacy) {
+            Stop-Posture
+            Unregister-ScheduledTask -TaskPath $TaskPath -TaskName $TaskName -Confirm:$false -ErrorAction SilentlyContinue
+            Remove-Item -LiteralPath $Launcher -Force -ErrorAction SilentlyContinue
+            Write-ProvLog 'Removed the auto_provisioning scheduled task (replaced by the edamame_posture service)'
+        }
+        $svc = Get-Service -Name $ServiceName -ErrorAction SilentlyContinue
+        if ($binaryChanged -or $configChanged -or $legacy -or -not $svc -or $svc.Status -ne 'Running') {
+            & $Exe install-service --conf $NativeConf | Out-File -Append -FilePath $LogFile -Encoding UTF8
+            if ($LASTEXITCODE -ne 0) { Stop-WithCode 8 "edamame_posture install-service exited with $LASTEXITCODE; see $LogFile and %ProgramData%\EDAMAME\Posture\edamame_posture_service.log" }
+            $ok = $false
+            for ($i = 0; $i -lt 30; $i++) {
+                Start-Sleep -Seconds 2
+                $svc = Get-Service -Name $ServiceName -ErrorAction SilentlyContinue
+                if ($svc -and $svc.Status -eq 'Running') { $ok = $true; break }
+            }
+            if (-not $ok) { Stop-WithCode 8 'the edamame_posture service did not reach Running; see %ProgramData%\EDAMAME\Posture\edamame_posture_service.log' }
+            Write-ProvLog 'edamame_posture service running'
+        } else {
+            Write-ProvLog 'Configuration unchanged; edamame_posture service running'
+        }
+        Write-ProvLog ("Done: mode={0}, provider={1}, hub={2}@{3}" -f $cur.agentic_mode, $cur.agentic_provider, $cur.user, $cur.domain)
+        exit 0
+    }
 
     $launcherChanged = $true
     if (Test-Path -LiteralPath $Launcher) { $launcherChanged = ((Get-Content -Raw -LiteralPath $Launcher).Trim() -ne $LauncherContent.Trim()) }

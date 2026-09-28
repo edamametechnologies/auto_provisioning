@@ -43,8 +43,16 @@ when the content is unchanged; check the mode on hosts configured by hand.
 
 ## Process arguments
 
-`edamame_posture` takes the PIN only as `--pin <PIN>` (there is no
-environment variable or file option), so while the daemon runs:
+EDAMAME >= 2.0.2 on macOS and Windows: the scripts register the product's
+service (`edamame_posture install-service --conf <file>`). It runs
+`edamame_posture service-run --conf <file>`, which reads the PIN and the LLM
+key from the root / SYSTEM-only file itself: neither appears in any process's
+arguments or environment, nor in the LaunchDaemon plist or the service
+definition. The service refuses a configuration file that is not owned by
+root or is writable by other users (macOS / Linux).
+
+Older releases, and the Linux packages' wrapper up to 2.0.1, take the PIN only
+as `--pin <PIN>`, so while the daemon runs:
 
 - Linux: `/proc/<pid>/cmdline` shows the PIN to every local user unless
   `/proc` is mounted with `hidepid=2`.
@@ -54,22 +62,32 @@ environment variable or file option), so while the daemon runs:
 
 The LLM key never appears in arguments: the service wrapper, the macOS
 launcher and the Windows launcher pass it as `EDAMAME_LLM_API_KEY` in the
-daemon's environment only. An `EDAMAME_PIN` environment variable in
-`edamame_posture` is part of the product proposal.
+daemon's environment only. An `EDAMAME_PIN` environment variable and a
+`--pin-file` option for `edamame_posture` (and the Linux wrapper exporting the
+PIN instead of passing it) are planned for 2.0.2.
 
 ## Download verification
 
 | OS | Checks before install |
 |---|---|
-| macOS | SHA-256 against the GitHub asset digest (or `EDAMAME_SHA256`); `pkgutil --check-signature` must show "Developer ID Installer: Edamame Technologies (WSL782B48J)" and Apple notarization |
-| Windows | SHA-256 against the GitHub asset digest (or `-Sha256`); `Get-AuthenticodeSignature` must be `Valid` with signer `O=EDAMAME TECHNOLOGIES SAS` |
+| macOS | SHA-256 against the release's `SHA256SUMS` (EDAMAME >= 2.0.2; its Sigstore signature is verified too when `cosign` is installed), else the GitHub asset digest (or `EDAMAME_SHA256`); `pkgutil --check-signature` must show "Developer ID Installer: Edamame Technologies (WSL782B48J)" and Apple notarization |
+| Windows | SHA-256 against the release's `SHA256SUMS` (EDAMAME >= 2.0.2), else the GitHub asset digest (or `-Sha256`); `Get-AuthenticodeSignature` must be `Valid` with signer `O=EDAMAME TECHNOLOGIES SAS` |
 | Linux APT | Repository `Release` signature by key `D1C58B47675E486792DAFBAE42A2002B57F1A203` (fingerprint checked before the key is trusted) |
 | Linux APK | Package signatures by the repository key (key file SHA-256 pinned) |
 
 The GitHub API is rate-limited (60 unauthenticated requests per hour per
-public IP). Fleets behind one NAT should pin `EDAMAME_VERSION` +
+public IP). From 2.0.2 the scripts read `SHA256SUMS` from the release
+download URL instead, which is not rate-limited the same way; for older
+releases, fleets behind one NAT should pin `EDAMAME_VERSION` +
 `EDAMAME_SHA256` (read the digest once from the release page or
 `gh release view --json assets`) or pass `EDAMAME_GITHUB_TOKEN`.
+
+Checking the `SHA256SUMS` signature (`cosign verify-blob`) and the build
+provenance (`gh attestation verify`) is best done once, centrally, before a
+version is approved for the fleet; see
+[distribution.md](distribution.md#verifying-downloads-edamame--202) for the
+exact commands. Endpoints then only need the pinned SHA-256 and the platform
+code signature.
 
 ## Observer independence
 

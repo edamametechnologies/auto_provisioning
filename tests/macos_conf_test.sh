@@ -76,6 +76,36 @@ if [ $? -eq 2 ]; then pass "mode without provider -> exit 2"; else fail "mode wi
 run_render "$WORK/e.conf" EDAMAME_VERSION=latest EDAMAME_SHA256=abc
 if [ $? -eq 2 ]; then pass "bad sha256 -> exit 2"; else fail "bad sha256 accepted"; fi
 
+# Provider slots for `edamame_posture service-run` (EDAMAME >= 2.0.2).
+C2="$WORK/slots.conf"
+if run_render "$C2" EDAMAME_LLM_PROVIDER=claude EDAMAME_LLM_API_KEY=sk-ant-1; then
+    expect "$C2" claude_api_key sk-ant-1 "claude key in its slot"
+    expect "$C2" openai_api_key "" "no openai key"
+    expect "$C2" llm_api_key sk-ant-1 "launcher key kept"
+else
+    fail "slots render exited $?"
+fi
+
+# SHA256SUMS parsing (EDAMAME >= 2.0.2 releases).
+cat >"$WORK/SHA256SUMS" <<'SUMS'
+1111111111111111111111111111111111111111111111111111111111111111  edamame-posture-macos-2.0.2-debug.pkg
+2222222222222222222222222222222222222222222222222222222222222222  edamame-posture-macos-2.0.2.pkg
+3333333333333333333333333333333333333333333333333333333333333333  edamame_posture-2.0.2-universal-apple-darwin
+SUMS
+sums_line() {
+    (
+        export EDAMAME_PROVISIONING_LIB=1 EDAMAME_LOG_FILE=/dev/null
+        # shellcheck disable=SC1090
+        source "$SCRIPT"
+        # shellcheck disable=SC2034  # read by sums_pkg_line
+        P_VERSION="$1"
+        sums_pkg_line "$WORK/SHA256SUMS"
+    )
+}
+case "$(sums_line latest)" in 2222*"edamame-posture-macos-2.0.2.pkg") pass "SHA256SUMS latest -> release PKG" ;; *) fail "SHA256SUMS latest: $(sums_line latest)" ;; esac
+case "$(sums_line 2.0.2)" in 2222*) pass "SHA256SUMS exact version" ;; *) fail "SHA256SUMS exact: $(sums_line 2.0.2)" ;; esac
+if [ -z "$(sums_line 2.0.20)" ] && [ -z "$(sums_line 2x0x2)" ]; then pass "SHA256SUMS no false match"; else fail "SHA256SUMS false match"; fi
+
 # Launcher against a stub binary.
 (
     export EDAMAME_PROVISIONING_LIB=1 EDAMAME_LOG_FILE=/dev/null

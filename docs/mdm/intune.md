@@ -40,8 +40,11 @@ the key.
    ```powershell
    $s = Join-Path $env:ProgramData 'EDAMAME\Provisioning\installed.json'
    if ((Test-Path $s) -and ((Get-Content -Raw $s | ConvertFrom-Json).version -eq '2.0.1') -and
-       (Get-ScheduledTask -TaskPath '\EDAMAME\' -TaskName 'EDAMAME Posture' -ErrorAction SilentlyContinue)) { 'installed' }
+       ((Get-Service -Name 'edamame_posture' -ErrorAction SilentlyContinue) -or
+        (Get-ScheduledTask -TaskPath '\EDAMAME\' -TaskName 'EDAMAME Posture' -ErrorAction SilentlyContinue))) { 'installed' }
    ```
+   (EDAMAME >= 2.0.2 installs the `edamame_posture` Windows service; older
+   releases the `\EDAMAME\EDAMAME Posture` scheduled task.)
 5. Return codes: add `2`-`8` as **Failed** (defaults treat unknown codes as failed).
 
 The Win32 install command is visible to Intune admins and written to the

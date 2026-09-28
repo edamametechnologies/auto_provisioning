@@ -3,14 +3,17 @@
 # Mosyle, Workspace ONE, or any tool that runs a script as root).
 #
 # 1. Downloads the signed and notarized EDAMAME Posture PKG from the GitHub
-#    release, verifies its SHA-256 against the digest GitHub publishes for the
-#    asset (or EDAMAME_SHA256) and its Developer ID Installer signature
-#    (Team ID WSL782B48J), and installs it.
+#    release, verifies its SHA-256 against the release's SHA256SUMS
+#    (EDAMAME >= 2.0.2; its Sigstore signature too when cosign is installed),
+#    else the digest GitHub publishes for the asset (or EDAMAME_SHA256), and
+#    its Developer ID Installer signature (Team ID WSL782B48J), and installs it.
 # 2. Writes /Library/Application Support/EDAMAME/Provisioning/edamame_posture.conf
 #    (root:wheel, 0600) holding the Hub enrollment and the LLM configuration.
-# 3. Installs a LaunchDaemon that starts `edamame_posture foreground-start`
-#    from that file at boot and keeps it running. (The posture PKG itself
-#    installs no service; see docs/configuration-reference.md.)
+# 3. EDAMAME >= 2.0.2: registers the product's own LaunchDaemon with
+#    `edamame_posture install-service --conf <that file>`
+#    (com.edamametechnologies.edamame-posture), which reads the file itself.
+#    Older releases install no service: the script then installs its own
+#    LaunchDaemon and launcher, running `edamame_posture foreground-start`.
 #
 # Idempotent: nothing is downloaded when the requested version is installed,
 # and the daemon restarts only when the version or the configuration changed.
@@ -62,6 +65,10 @@ STATE_DIR="${PROV_DIR}/state"
 LABEL="com.edamametechnologies.auto-provisioning.posture"
 PLIST="/Library/LaunchDaemons/${LABEL}.plist"
 DAEMON_LOG="/Library/Logs/EDAMAME/edamame_posture_daemon.log"
+# The product's service (EDAMAME >= 2.0.2, `edamame_posture install-service`).
+NATIVE_LABEL="com.edamametechnologies.edamame-posture"
+NATIVE_LOG="/var/log/edamame_posture_service.log"
+SUMS_SIGNER_RE='^https://github\.com/edamametechnologies/edamame_posture_cli/\.github/workflows/release_checksums\.yml@refs/heads/main$'
 LOG_FILE="${EDAMAME_LOG_FILE:-/Library/Logs/EDAMAME/provisioning.log}"
 TMP_DIR=""
 
@@ -269,8 +276,16 @@ render_conf() {
         die 2 "agentic mode '$c_mode' needs an LLM provider: set EDAMAME_LLM_PROVIDER and its key"
     fi
 
+    # Provider credential slots of the Linux conf format, read by
+    # `edamame_posture service-run` (EDAMAME >= 2.0.2); llm_api_key is the
+    # Portal slot there and the single key of the older launcher.
+    local c_claude="" c_openai=""
+    if [ "$c_provider" = claude ]; then c_claude="$c_key"; fi
+    if [ "$c_provider" = openai ]; then c_openai="$c_key"; fi
+
     echo "# EDAMAME Posture configuration, written by the EDAMAME auto_provisioning macOS script."
-    echo "# Read by ${LAUNCHER}. Holds the Hub PIN and the LLM key: root:wheel, mode 0600."
+    echo "# Read by edamame_posture service-run (EDAMAME >= 2.0.2) or ${LAUNCHER}."
+    echo "# Holds the Hub PIN and the LLM key: root:wheel, mode 0600."
     kv edamame_user "$c_user"
     kv edamame_domain "$c_domain"
     kv edamame_pin "$c_pin"
@@ -281,6 +296,8 @@ render_conf() {
     kv llm_api_key "$c_key"
     kv llm_model "$c_model"
     kv llm_base_url "$c_url"
+    kv claude_api_key "$c_claude"
+    kv openai_api_key "$c_openai"
 }
 
 # install_file <tmp> <dest> <mode>: sets CHANGED=true when the content differs.
@@ -425,11 +442,53 @@ function run(argv) {
 JXA
 }
 
+# sums_pkg_line <SHA256SUMS>: the "<sha256>  <name>" line of the release PKG
+# (the requested version, or any version for latest; never the -debug PKG).
+sums_pkg_line() {
+    if [ "$P_VERSION" = latest ]; then
+        grep -E '^[0-9a-f]{64}  edamame-posture-macos-[0-9]+(\.[0-9]+)*\.pkg$' "$1" | head -n 1 || true
+    else
+        grep -E "^[0-9a-f]{64}  edamame-posture-macos-${P_VERSION//./\\.}\\.pkg\$" "$1" | head -n 1 || true
+    fi
+}
+
+# resolve_from_sums: EDAMAME >= 2.0.2 releases carry SHA256SUMS (and its
+# Sigstore bundle), fetched without the rate-limited GitHub API. Sets VERSION
+# and EXPECTED_SHA256; returns 1 when the release has no SHA256SUMS.
+resolve_from_sums() {
+    local base sums line
+    if [ "$P_VERSION" = latest ]; then
+        base="https://github.com/${REPO}/releases/latest/download"
+    else
+        base="https://github.com/${REPO}/releases/download/v${P_VERSION}"
+    fi
+    sums="$TMP_DIR/SHA256SUMS"
+    curl --proto '=https' --tlsv1.2 -fsSL --retry 3 --retry-delay 5 -o "$sums" "${base}/SHA256SUMS" 2>/dev/null || return 1
+    line="$(sums_pkg_line "$sums")"
+    [ -n "$line" ] || die 5 "SHA256SUMS of ${base} lists no macOS PKG"
+    if command -v cosign >/dev/null 2>&1; then
+        curl --proto '=https' --tlsv1.2 -fsSL --retry 3 -o "$sums.sigstore.json" "${base}/SHA256SUMS.sigstore.json" ||
+            die 5 "SHA256SUMS.sigstore.json missing from ${base}"
+        cosign verify-blob --bundle "$sums.sigstore.json" \
+            --certificate-identity-regexp "$SUMS_SIGNER_RE" \
+            --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+            "$sums" >>"$LOG_FILE" 2>&1 || die 5 "SHA256SUMS signature verification failed"
+        log "SHA256SUMS signature verified (Sigstore)"
+    fi
+    EXPECTED_SHA256="${line%%  *}"
+    VERSION="${line##*edamame-posture-macos-}"
+    VERSION="${VERSION%.pkg}"
+    return 0
+}
+
 resolve_version_and_digest() {
     # Sets VERSION and EXPECTED_SHA256.
     if [ -n "$P_SHA256" ]; then
         VERSION="$P_VERSION"
         EXPECTED_SHA256="$P_SHA256"
+        return 0
+    fi
+    if resolve_from_sums; then
         return 0
     fi
     local path json out tag digest
@@ -507,8 +566,35 @@ start_daemon() {
     die 8 "daemon is not running; see ${DAEMON_LOG}"
 }
 
+# native_service_supported: the installed binary has `install-service`
+# (EDAMAME >= 2.0.2).
+native_service_supported() {
+    [ -x "$BINARY" ] && "$BINARY" install-service --help >/dev/null 2>&1
+}
+
+native_running() {
+    /bin/launchctl print "system/${NATIVE_LABEL}" 2>/dev/null | grep -q "state = running"
+}
+
+start_native_service() {
+    run_with_timeout 120 "$BINARY" install-service --conf "$CONF" || die 8 "edamame_posture install-service failed (see $LOG_FILE)"
+    local i=0
+    while [ "$i" -lt 30 ]; do
+        if native_running; then
+            log "Service running (${NATIVE_LABEL})"
+            return 0
+        fi
+        sleep 2
+        i=$((i + 1))
+    done
+    die 8 "service is not running; see ${NATIVE_LOG} and /var/log/edamame/"
+}
+
 uninstall() {
     log "Uninstalling EDAMAME Posture"
+    if native_service_supported; then
+        run_with_timeout 60 "$BINARY" uninstall-service || true
+    fi
     stop_daemon
     rm -f "$PLIST"
     rm -rf "$PROV_DIR"
@@ -569,18 +655,37 @@ chmod 0700 "$STATE_DIR"
 CHANGED=false
 render_conf >"$TMP_DIR/conf" || exit $?
 install_file "$TMP_DIR/conf" "$CONF" 0600
-render_launcher >"$TMP_DIR/launcher"
-install_file "$TMP_DIR/launcher" "$LAUNCHER" 0755
-render_plist >"$TMP_DIR/plist"
-/usr/bin/plutil -lint "$TMP_DIR/plist" >/dev/null || die 7 "generated LaunchDaemon plist is invalid"
-install_file "$TMP_DIR/plist" "$PLIST" 0644
 
-if [ "$CHANGED" = true ] || [ "$PKG_CHANGED" = true ] ||
-    ! /bin/launchctl print "system/${LABEL}" 2>/dev/null | grep -q "state = running"; then
-    stop_daemon
-    start_daemon
+if native_service_supported; then
+    # EDAMAME >= 2.0.2: the product's LaunchDaemon reads $CONF itself; the
+    # PIN never reaches a command line. Replace this script's older launcher.
+    LEGACY=false
+    if [ -f "$PLIST" ] || [ -f "$LAUNCHER" ]; then
+        LEGACY=true
+        stop_daemon
+        rm -f "$PLIST" "$LAUNCHER"
+        log "Removed the auto_provisioning LaunchDaemon (replaced by ${NATIVE_LABEL})"
+    fi
+    if [ "$CHANGED" = true ] || [ "$PKG_CHANGED" = true ] || [ "$LEGACY" = true ] || ! native_running; then
+        stop_daemon
+        start_native_service
+    else
+        log "Configuration unchanged; service running"
+    fi
 else
-    log "Configuration unchanged; daemon running"
+    render_launcher >"$TMP_DIR/launcher"
+    install_file "$TMP_DIR/launcher" "$LAUNCHER" 0755
+    render_plist >"$TMP_DIR/plist"
+    /usr/bin/plutil -lint "$TMP_DIR/plist" >/dev/null || die 7 "generated LaunchDaemon plist is invalid"
+    install_file "$TMP_DIR/plist" "$PLIST" 0644
+
+    if [ "$CHANGED" = true ] || [ "$PKG_CHANGED" = true ] ||
+        ! /bin/launchctl print "system/${LABEL}" 2>/dev/null | grep -q "state = running"; then
+        stop_daemon
+        start_daemon
+    else
+        log "Configuration unchanged; daemon running"
+    fi
 fi
 
 log "Done: EDAMAME Posture $(installed_version), mode=$(conf_get agentic_mode), provider=$(conf_get agentic_provider), hub=$(conf_get edamame_user)@$(conf_get edamame_domain)"

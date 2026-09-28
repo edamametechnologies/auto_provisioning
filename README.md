@@ -25,9 +25,9 @@ It covers two products:
 ```
 scripts/
   linux/install-edamame-posture.sh    APT/APK install, /etc/edamame_posture.conf, service (A, Linux B)
-  macos/install-edamame-posture.sh    PKG install + verification, config, LaunchDaemon (A)
+  macos/install-edamame-posture.sh    PKG install + verification, config, service (A)
   macos/install-edamame-app.sh        App + helper PKG install + verification (B)
-  windows/Install-EdamamePosture.ps1  exe install + verification, config, SYSTEM task (A)
+  windows/Install-EdamamePosture.ps1  exe install + verification, config, service (A)
   windows/Install-EdamameApp.ps1      All-in-one bundle install + verification (B)
 profiles/
   macos/edamame-pppc-login-items.mobileconfig          Full Disk Access + managed login items (works today)
@@ -77,6 +77,13 @@ failed, `6` install failed, `7` configuration failed, `8` service did not start
 The scripts are idempotent: a re-run with the same parameters downloads
 nothing and does not restart anything. Parameters left out keep their current
 value.
+
+EDAMAME >= 2.0.2: the macOS and Windows posture scripts register the
+product's own service (`edamame_posture install-service`, which reads the
+configuration file itself, so the PIN never appears on a command line) and
+replace the LaunchDaemon / scheduled task they install for older releases.
+Downloads are checked against the release's signed `SHA256SUMS`; see
+[docs/distribution.md](docs/distribution.md#verifying-downloads-edamame--202).
 
 ## Prerequisites
 
