@@ -74,11 +74,11 @@ apply): detection script exits 1 when the task is missing or
 
 Alternatively package `Install-EdamameApp.ps1`, which downloads and verifies
 the bundle at install time (install command
-`powershell.exe -NoProfile -ExecutionPolicy Bypass -File Install-EdamameApp.ps1 -Version 2.0.1`).
+`powershell.exe -NoProfile -ExecutionPolicy Bypass -File Install-EdamameApp.ps1 -Version 2.0.2`).
 
 Another option is two line-of-business apps: the MSIX (install context:
-Device) and the helper MSI. Do not use the Chocolatey `edamame` package
-through Intune: it registers the MSIX for the SYSTEM account only.
+Device) and the helper MSI. The Chocolatey `edamame` package is not an
+option before 2.0.3 (see [distribution.md](../distribution.md)).
 
 Managed settings (EDAMAME >= 2.0.2, see
 [app-configuration.md](../app-configuration.md)): import

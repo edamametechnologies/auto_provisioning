@@ -167,7 +167,7 @@ Package managers and stores:
 | Channel | Identifier | MDM notes |
 |---|---|---|
 | Homebrew | `edamametechnologies/tap/edamame`, `edamametechnologies/tap/edamame-helper` | Casks install the same PKGs |
-| Chocolatey | `edamame`, `edamame-helper` | Up to 2.0.1 the `edamame` package registered the MSIX with `Add-AppxPackage` for the account running choco only: run as SYSTEM (as MDMs do), no user got the app. From 2.0.2 it provisions the MSIX machine-wide (`Add-AppxProvisionedPackage`, the bundle's own installer script) and registers it for the signed-in user; other users get it at their next sign-in. The helper still comes from `edamame-helper`. The bundle remains the single-artifact choice |
+| Chocolatey | `edamame`, `edamame-helper` | The `edamame` (app) package is not on the community feed today: its last version, 1.1.2, was never approved, and 1.9.0 to 2.0.2 were not published. Publication resumes with 2.0.3, whose package provisions the MSIX machine-wide (`Add-AppxProvisionedPackage`, the bundle's own installer script) and registers it for the signed-in user; other users get it at their next sign-in. Until then, use the bundle. The helper comes from `edamame-helper` (published) |
 | Mac App Store | `id1636777324` | Sandboxed build without the helper; can be assigned through Apple Business Manager, but cannot be preconfigured and the helper must be deployed separately |
 | Microsoft Store | `9N399LMTKQLQ` | MSIX only, no helper; same limits |
 | iOS App Store / Google Play | `id6448937722` / `com.edamametech.edamame` | Mobile, out of scope here |
