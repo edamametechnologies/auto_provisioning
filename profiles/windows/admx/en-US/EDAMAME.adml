@@ -6,6 +6,7 @@
   <resources>
     <stringTable>
       <string id="SUPPORTED_EDAMAME_2_0_2">EDAMAME Security 2.0.2 or later</string>
+      <string id="SUPPORTED_EDAMAME_2_0_5">EDAMAME Security 2.0.5 or later</string>
       <string id="EDAMAME">EDAMAME</string>
       <string id="EDAMAMESecurity">EDAMAME Security</string>
       <string id="OrganizationName">Organization name</string>
@@ -47,8 +48,10 @@
       <string id="CaptureEnabled_Help">Starts (enabled) or stops (disabled) network session capture. Needs the EDAMAME Helper.</string>
       <string id="FileMonitorEnabled">File event monitoring</string>
       <string id="FileMonitorEnabled_Help">Starts (enabled) or stops (disabled) file event monitoring. Needs the EDAMAME Helper.</string>
-      <string id="LockMonitoring">Lock session capture and file monitoring</string>
-      <string id="LockMonitoring_Help">The user cannot change session capture or file event monitoring away from the values set above, and turning protection off leaves them running.</string>
+      <string id="LanAutoScan">Automatic LAN scanning</string>
+      <string id="LanAutoScan_Help">Turns automatic scanning of local networks on (enabled) or off (disabled). It scans only the networks with LAN consent: the user's, or Organization consent for network monitoring.</string>
+      <string id="LockMonitoring">Lock session capture, file monitoring and LAN scanning</string>
+      <string id="LockMonitoring_Help">The user cannot change session capture, file event monitoring or automatic LAN scanning away from the values set above, and turning protection off leaves them running.</string>
       <string id="HideAISettings">Hide the AI model settings</string>
       <string id="HideAISettings_Help">Hides the model connection section of Config > AI.</string>
     </stringTable>

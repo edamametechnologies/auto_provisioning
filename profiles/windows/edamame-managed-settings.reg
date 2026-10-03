@@ -24,5 +24,6 @@ Windows Registry Editor Version 5.00
 "ShareAIFailureDetails"=dword:00000001
 "CaptureEnabled"=dword:00000001
 "FileMonitorEnabled"=dword:00000001
+"LanAutoScan"=dword:00000001
 "LockMonitoring"=dword:00000000
 "HideAISettings"=dword:00000000

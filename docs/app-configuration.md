@@ -51,7 +51,8 @@ Templates: [profiles/macos/edamame-managed-settings.mobileconfig](../profiles/ma
 | `ShareAIFailureDetails` | bool | `true`: AI failure details are added to score reports; `false`: never. The user cannot change a set value |
 | `CaptureEnabled` | bool | Starts / stops network session capture (needs the helper) |
 | `FileMonitorEnabled` | bool | Starts / stops file event monitoring (needs the helper) |
-| `LockMonitoring` | bool | The user cannot change capture / file monitoring away from the policy; turning protection off leaves them running |
+| `LanAutoScan` | bool | Turns automatic LAN scanning on / off (2.0.5). It scans only the networks with LAN consent: the user's, or `NetworkMonitoringConsent` |
+| `LockMonitoring` | bool | The user cannot change capture / file monitoring / LAN auto-scan away from the policy; turning protection off leaves them running |
 | `HideAISettings` | bool | Hides the model connection section of Config > AI |
 
 Booleans: plist `<true/>` / `<false/>`, registry `REG_DWORD` 0 / 1, or the

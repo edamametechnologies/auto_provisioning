@@ -9,6 +9,7 @@
   <supportedOn>
     <definitions>
       <definition name="SUPPORTED_EDAMAME_2_0_2" displayName="$(string.SUPPORTED_EDAMAME_2_0_2)" />
+      <definition name="SUPPORTED_EDAMAME_2_0_5" displayName="$(string.SUPPORTED_EDAMAME_2_0_5)" />
     </definitions>
   </supportedOn>
   <categories>
@@ -188,6 +189,16 @@
     <policy name="FileMonitorEnabled" class="Machine" displayName="$(string.FileMonitorEnabled)" explainText="$(string.FileMonitorEnabled_Help)" key="SOFTWARE\Policies\EDAMAME\EDAMAME Security" valueName="FileMonitorEnabled">
       <parentCategory ref="EDAMAMESecurity" />
       <supportedOn ref="SUPPORTED_EDAMAME_2_0_2" />
+      <enabledValue>
+        <decimal value="1" />
+      </enabledValue>
+      <disabledValue>
+        <decimal value="0" />
+      </disabledValue>
+    </policy>
+    <policy name="LanAutoScan" class="Machine" displayName="$(string.LanAutoScan)" explainText="$(string.LanAutoScan_Help)" key="SOFTWARE\Policies\EDAMAME\EDAMAME Security" valueName="LanAutoScan">
+      <parentCategory ref="EDAMAMESecurity" />
+      <supportedOn ref="SUPPORTED_EDAMAME_2_0_5" />
       <enabledValue>
         <decimal value="1" />
       </enabledValue>

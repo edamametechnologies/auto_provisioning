@@ -77,6 +77,8 @@
             <true/>
             <key>FileMonitorEnabled</key>
             <true/>
+            <key>LanAutoScan</key>
+            <true/>
             <key>LockMonitoring</key>
             <false/>
 
